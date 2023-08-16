@@ -27,116 +27,168 @@ impl BlockProperties {
 }
 
 // Block types.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Block {
-    Debug,
+    Void, // Basically null.
     Air,
+    Debug,
 }
 
 impl Block {
-    pub fn properties(block: Block) -> BlockProperties {
-        return match block {
-            Block::Debug => BlockProperties {
-                ..Default::default()
+    pub fn properties(&self) -> BlockProperties {
+        return match self {
+            Self::Debug => BlockProperties {
+                ..BlockProperties::default()
             },
 
-            Block::Air => BlockProperties {
+            Self::Air => BlockProperties {
                 transparent: true,
                 hardness: u8::MIN,
                 drop: None,
                 textures: [
                     None; 6
                 ],
-                ..Default::default()
+                ..BlockProperties::default()
+            },
+
+            Self::Void => BlockProperties {
+                transparent: true,
+                hardness: u8::MIN,
+                drop: None,
+                textures: [
+                    None; 6
+                ],
+                ..BlockProperties::default()
             },
         };
     }
 }
 
 // Voxel for actually building a mesh.
+#[derive(Debug)]
 pub struct Voxel {
     pub id: Block,
-    pub position: Vec3,
-    pub sides: Vec<Axis>,
+    pub sides: Vec<VoxelSide>,
 }
 
-// Return mesh for a voxel.
-pub fn create_voxel_mesh(voxel: Voxel) -> Mesh {
-    let (min_x, min_y, min_z) = (-1.0, -0.5, -0.5);
-    let (max_x, max_y, max_z) = (1.0, 0.5, 0.5);
+impl Voxel {
+    // Really only use this for testing.
+    pub fn into_mesh(&self) -> Mesh {
+        let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
 
-    let vertices = vec![
-        // Front.
-        ([min_x, max_y, min_z], [0., 0., -1.0], [1.0, 0.]),
-        ([max_x, max_y, min_z], [0., 0., -1.0], [0., 0.]),
-        ([max_x, min_y, min_z], [0., 0., -1.0], [0., 1.0]),
-        ([min_x, min_y, min_z], [0., 0., -1.0], [1.0, 1.0]),
-        // Back.
-        ([min_x, min_y, max_z], [0., 0., 1.0], [0., 0.]),
-        ([max_x, min_y, max_z], [0., 0., 1.0], [1.0, 0.]),
-        ([max_x, max_y, max_z], [0., 0., 1.0], [1.0, 1.0]),
-        ([min_x, max_y, max_z], [0., 0., 1.0], [0., 1.0]),
-        // Right.
-        ([max_x, min_y, min_z], [1.0, 0., 0.], [0., 0.]),
-        ([max_x, max_y, min_z], [1.0, 0., 0.], [1.0, 0.]),
-        ([max_x, max_y, max_z], [1.0, 0., 0.], [1.0, 1.0]),
-        ([max_x, min_y, max_z], [1.0, 0., 0.], [0., 1.0]),
-        // Left.
-        ([min_x, min_y, max_z], [-1.0, 0., 0.], [1.0, 0.]),
-        ([min_x, max_y, max_z], [-1.0, 0., 0.], [0., 0.]),
-        ([min_x, max_y, min_z], [-1.0, 0., 0.], [0., 1.0]),
-        ([min_x, min_y, min_z], [-1.0, 0., 0.], [1.0, 1.0]),
-        // Top.
-        ([max_x, max_y, min_z], [0., 1.0, 0.], [1.0, 0.]),
-        ([min_x, max_y, min_z], [0., 1.0, 0.], [0., 0.]),
-        ([min_x, max_y, max_z], [0., 1.0, 0.], [0., 1.0]),
-        ([max_x, max_y, max_z], [0., 1.0, 0.], [1.0, 1.0]),
-        // Bottom.
-        ([max_x, min_y, max_z], [0., -1.0, 0.], [0., 0.]),
-        ([min_x, min_y, max_z], [0., -1.0, 0.], [1.0, 0.]),
-        ([min_x, min_y, min_z], [0., -1.0, 0.], [1.0, 1.0]),
-        ([max_x, min_y, min_z], [0., -1.0, 0.], [0., 1.0]),
-    ];
+        for i in self.sides.iter() {
+            vertices.extend(i.vertices.clone());
 
-    let mut indices: Vec<u32> = Vec::new();
-
-    for i in voxel.sides {
-        if i == Axis::North {
-            for j in [0, 1, 2, 2, 3, 0] {
-                indices.push(j);
-            }
+            indices = combine_indices(&vec![indices, i.indices.clone()]);
         }
 
-        else if i == Axis::South {
-            for j in [4, 5, 6, 6, 7, 4] {
-                indices.push(j);
-            }
-        }
+        return create_mesh(&vertices, &indices);
+    }
+}
 
-        else if i == Axis::East {
-            for j in [8, 9, 10, 10, 11, 8] {
-                indices.push(j);
-            }
-        }
+// Voxel side meshes, basically.
+#[derive(Debug, PartialEq)]
+pub struct VoxelSide {
+    pub side: Axis,
+    pub vertices: Vec<([f32; 3], [f32; 3], [f32; 2])>,
+    pub indices: Vec<u32>,
+    pub pos: (u8, u8, u8),
+}
 
-        else if i == Axis::West {
-            for j in [12, 13, 14, 14, 15, 12] {
-                indices.push(j);
-            }
-        }
+impl VoxelSide {
+    pub fn new(side: Axis, pos: (u8, u8, u8)) -> Self {
+        let (min_x, min_y, min_z) = (-0.5, -0.5, -0.5);
+        let (max_x, max_y, max_z) = (0.5, 0.5, 0.5);
 
-        else if i == Axis::Up {
-            for j in [16, 17, 18, 18, 19, 16] {
-                indices.push(j);
-            }
-        }
+        let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
 
-        else if i == Axis::Down {
-            for j in [20, 21, 22, 22, 23, 20] {
-                indices.push(j);
-            }
-        }
+        let indices = vec![0, 1, 2, 2, 3, 0];
+
+        match side {
+            Axis::North => {
+                for j in [
+                    ([min_x + pos.0 as f32, max_y + pos.1 as f32, min_z + pos.2 as f32], [0., 0., -1.0], [1.0, 0.]),
+                    ([max_x + pos.0 as f32, max_y + pos.1 as f32, min_z + pos.2 as f32], [0., 0., -1.0], [0., 0.]),
+                    ([max_x + pos.0 as f32, min_y + pos.1 as f32, min_z + pos.2 as f32], [0., 0., -1.0], [0., 1.0]),
+                    ([min_x + pos.0 as f32, min_y + pos.1 as f32, min_z + pos.2 as f32], [0., 0., -1.0], [1.0, 1.0]),
+                ] {
+                    vertices.push(j);
+                }
+            },
+            Axis::South => {
+                for j in [
+                    ([min_x + pos.0 as f32, min_y + pos.1 as f32, max_z + pos.2 as f32], [0., 0., 1.0], [0., 0.]),
+                    ([max_x + pos.0 as f32, min_y + pos.1 as f32, max_z + pos.2 as f32], [0., 0., 1.0], [1.0, 0.]),
+                    ([max_x + pos.0 as f32, max_y + pos.1 as f32, max_z + pos.2 as f32], [0., 0., 1.0], [1.0, 1.0]),
+                    ([min_x + pos.0 as f32, max_y + pos.1 as f32, max_z + pos.2 as f32], [0., 0., 1.0], [0., 1.0]),
+                ] {
+                    vertices.push(j);
+                }
+            },
+            Axis::East => {
+                for j in [
+                    ([max_x + pos.0 as f32, min_y + pos.1 as f32, min_z + pos.2 as f32], [1.0, 0., 0.], [0., 0.]),
+                    ([max_x + pos.0 as f32, max_y + pos.1 as f32, min_z + pos.2 as f32], [1.0, 0., 0.], [1.0, 0.]),
+                    ([max_x + pos.0 as f32, max_y + pos.1 as f32, max_z + pos.2 as f32], [1.0, 0., 0.], [1.0, 1.0]),
+                    ([max_x + pos.0 as f32, min_y + pos.1 as f32, max_z + pos.2 as f32], [1.0, 0., 0.], [0., 1.0]),
+                ] {
+                    vertices.push(j);
+                }
+            },
+            Axis::West => {
+                for j in [
+                    ([min_x + pos.0 as f32, min_y + pos.1 as f32, max_z + pos.2 as f32], [-1.0, 0., 0.], [1.0, 0.]),
+                    ([min_x + pos.0 as f32, max_y + pos.1 as f32, max_z + pos.2 as f32], [-1.0, 0., 0.], [0., 0.]),
+                    ([min_x + pos.0 as f32, max_y + pos.1 as f32, min_z + pos.2 as f32], [-1.0, 0., 0.], [0., 1.0]),
+                    ([min_x + pos.0 as f32, min_y + pos.1 as f32, min_z + pos.2 as f32], [-1.0, 0., 0.], [1.0, 1.0]),
+                ] {
+                    vertices.push(j);
+                }
+            },
+            Axis::Up => {
+                for j in [
+                    ([max_x + pos.0 as f32, max_y + pos.1 as f32, min_z + pos.2 as f32], [0., 1.0, 0.], [1.0, 0.]),
+                    ([min_x + pos.0 as f32, max_y + pos.1 as f32, min_z + pos.2 as f32], [0., 1.0, 0.], [0., 0.]),
+                    ([min_x + pos.0 as f32, max_y + pos.1 as f32, max_z + pos.2 as f32], [0., 1.0, 0.], [0., 1.0]),
+                    ([max_x + pos.0 as f32, max_y + pos.1 as f32, max_z + pos.2 as f32], [0., 1.0, 0.], [1.0, 1.0]),
+                ] {
+                    vertices.push(j);
+                }
+            },
+            Axis::Down => {
+                for j in [
+                    ([max_x + pos.0 as f32, min_y + pos.1 as f32, max_z + pos.2 as f32], [0., -1.0, 0.], [0., 0.]),
+                    ([min_x + pos.0 as f32, min_y + pos.1 as f32, max_z + pos.2 as f32], [0., -1.0, 0.], [1.0, 0.]),
+                    ([min_x + pos.0 as f32, min_y + pos.1 as f32, min_z + pos.2 as f32], [0., -1.0, 0.], [1.0, 1.0]),
+                    ([max_x + pos.0 as f32, min_y + pos.1 as f32, min_z + pos.2 as f32], [0., -1.0, 0.], [0., 1.0]),
+                ] {
+                    vertices.push(j);
+                }
+            },
+        };
+
+        return Self {
+            side,
+            pos,
+            vertices,
+            indices,
+        };
     }
 
-    return create_mesh(&vertices, &indices);
+    pub fn vec_from_axis_vec(axis_vec: &Vec<Axis>, pos: (u8, u8, u8)) -> Vec<Self> {
+        let mut face_vec: Vec<Self> = Vec::new();
+
+        for i in axis_vec.iter() {
+            face_vec.push(Self::new(*i, pos));
+        }
+
+        return face_vec;
+    }
+
+    pub fn coord_offset(&self) -> (i8, i8, i8) {
+        let sp = self.pos;
+
+        return self.side.coord_offset_from(sp.0 as i16, sp.1 as i16, sp.2 as i16);
+    }
 }
