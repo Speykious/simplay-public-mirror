@@ -69,7 +69,6 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
             for z in 0..CHUNK_SIZE.2 {
                 let r = randint(0..10);
                 if r == 0 {
-                    println!("DEBUG: {}", r);
                     chunk.set_block((x, y, z), Block::Debug);
                 }
             }
@@ -118,8 +117,9 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
     cmds.spawn(
         PointLightBundle {
             point_light: PointLight {
-                intensity: 950000.0,
+                intensity: 9500.0,
                 shadows_enabled: true,
+                range: 100.0,
                 ..default()
             },
             transform: Transform::from_xyz(20.5, 30.3, 20.2),
@@ -131,7 +131,7 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(50.0, 50.0, 50.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            transform: Transform::from_xyz(30.0, 30.0, 30.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         },
 
