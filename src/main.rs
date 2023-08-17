@@ -105,14 +105,14 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
         }
     );
 
-    cmds.spawn(
-        PbrBundle {
-            mesh: meshes.add(cube_mesh),
-            material: materials.add(Color::rgb(0.2, 1.0, 1.0).into()),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            ..default()
-        }
-    );
+    // cmds.spawn(
+    //     PbrBundle {
+    //         mesh: meshes.add(cube_mesh),
+    //         material: materials.add(Color::rgb(0.2, 1.0, 1.0).into()),
+    //         transform: Transform::from_xyz(0.0, 0.0, 0.0),
+    //         ..default()
+    //     }
+    // );
 
     cmds.spawn(
         PointLightBundle {
