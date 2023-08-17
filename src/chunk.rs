@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::voxel::*;
-use crate::world::Axis;
+use crate::world::{Axis, AxisCoord};
 use crate::library::*;
 
 // ==== DEBUG SETTINGS ====
@@ -13,7 +13,7 @@ const HIDE_EDGE_FACES: bool = true;
 
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ChunkHashMap {
     map: HashMap<(u8, u8, u8), Block>,
 }
@@ -33,11 +33,11 @@ impl ChunkHashMap {
         return match self.map.get(&c) {
             Some(s) => *s,
             None => Block::Air,
-        }
+        };
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Chunk {
     pub position: (isize, isize, isize),
     pub blocks: ChunkHashMap,
@@ -161,5 +161,83 @@ impl Chunk {
         // }
 
         return blocks;
+    }
+
+    pub fn pos_local_to_global_single(&self, s: u8, coord_type: AxisCoord) -> isize {
+        let csize = match coord_type {
+            AxisCoord::X => CHUNK_SIZE.0,
+            AxisCoord::Y => CHUNK_SIZE.1,
+            AxisCoord::Z => CHUNK_SIZE.2,
+        };
+
+        let cpos = match coord_type {
+            AxisCoord::X => self.position.0,
+            AxisCoord::Y => self.position.1,
+            AxisCoord::Z => self.position.2,
+        };
+
+        let global_s: isize = (cpos * csize as isize) + s as isize;
+
+        return global_s;
+    }
+
+    pub fn pos_local_to_global(&mut self, x: u8, y: u8, z: u8) -> (isize, isize, isize) {
+        let global_pos: (isize, isize, isize) = (self.pos_local_to_global_single(x, AxisCoord::X), self.pos_local_to_global_single(y, AxisCoord::Y), self.pos_local_to_global_single(z, AxisCoord::Z));
+
+        return global_pos;
+    }
+
+    pub fn pos_global_to_chunk_single(s: isize, coord_type: AxisCoord) -> isize {
+        let csize = match coord_type {
+            AxisCoord::X => CHUNK_SIZE.0,
+            AxisCoord::Y => CHUNK_SIZE.1,
+            AxisCoord::Z => CHUNK_SIZE.2,
+        };
+
+        let chunk_s: isize = (s as f64 / csize as f64).ceil() as isize;
+
+        return chunk_s;
+    }
+
+    pub fn pos_global_to_chunk(x: isize, y: isize, z: isize) -> (isize, isize, isize) {
+        let chunk_pos: (isize, isize, isize) = (Self::pos_global_to_chunk_single(x, AxisCoord::X), Self::pos_global_to_chunk_single(y, AxisCoord::Y), Self::pos_global_to_chunk_single(z, AxisCoord::Z));
+
+        return chunk_pos;
+    }
+
+    pub fn pos_chunk_to_global_single(s: isize, coord_type: AxisCoord) -> isize {
+        let csize = match coord_type {
+            AxisCoord::X => CHUNK_SIZE.0,
+            AxisCoord::Y => CHUNK_SIZE.1,
+            AxisCoord::Z => CHUNK_SIZE.2,
+        };
+
+        let global_s: isize = s * csize as isize;
+
+        return global_s;
+    }
+
+    pub fn pos_chunk_to_global(x: isize, y: isize, z: isize) -> (isize, isize, isize) {
+        let global_pos: (isize, isize, isize) = (Self::pos_chunk_to_global_single(x, AxisCoord::X), Self::pos_chunk_to_global_single(y, AxisCoord::Y), Self::pos_chunk_to_global_single(z, AxisCoord::Z));
+
+        return global_pos;
+    }
+
+    pub fn pos_global_to_local_single(s: isize, coord_type: AxisCoord) -> u8 {
+        let csize = match coord_type {
+            AxisCoord::X => CHUNK_SIZE.0,
+            AxisCoord::Y => CHUNK_SIZE.1,
+            AxisCoord::Z => CHUNK_SIZE.2,
+        };
+
+        let local_s: u8 = (s % csize as isize) as u8;
+
+        return local_s;
+    }
+
+    pub fn pos_global_to_local(x: isize, y: isize, z: isize) -> (u8, u8, u8) {
+        let local_pos: (u8, u8, u8) = (Self::pos_global_to_local_single(x, AxisCoord::X), Self::pos_global_to_local_single(y, AxisCoord::Y), Self::pos_global_to_local_single(z, AxisCoord::Z));
+
+        return local_pos;
     }
 }

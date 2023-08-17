@@ -1,5 +1,12 @@
 #![allow(dead_code)]
 
+#[derive(Debug)]
+pub enum AxisCoord {
+    X,
+    Y,
+    Z,
+}
+
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Axis {
     North,

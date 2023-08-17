@@ -1,4 +1,5 @@
 [ ] >> Multi-threading with Rayon. (using .par_iter())
 [*] >> Perlin noise.
 [ ] >> Refactor noise.
-[ ] >> Make a chunk manager for spawn and deleting chunks.
+[-] >> Make a chunk manager for spawn and deleting chunks.
+[ ] >> Greedy meshing.

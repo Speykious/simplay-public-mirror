@@ -2,6 +2,7 @@ mod voxel;
 mod world;
 mod library;
 mod chunk;
+mod chunk_manager;
 mod perlin;
 
 use bevy::prelude::*;
@@ -9,6 +10,7 @@ use world::Axis;
 use voxel::*;
 use chunk::*;
 use library::*;
+use chunk_manager::*;
 
 const ROTATE: bool = false;
 const ROTATE_DETAILS: (bool, bool, bool) = (false, true, false);
@@ -31,9 +33,11 @@ fn main() {
             }
         ))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
+        .insert_resource(ChunkManager::new())
         .add_systems(Startup, spawn_camera)
         .add_systems(Startup, setup)
         .add_systems(Update, transform_system)
+        .add_systems(Update, chunk_manager_system)
         .run();
 }
 
@@ -63,77 +67,15 @@ fn transform_system(mut query: Query<&mut Transform, Without<StaticObj>>, time: 
 struct StaticObj;
 
 fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
-    let mut chunks = vec![
-        Chunk::new(0, 0, 0),
-        Chunk::new(0, 1, 0),
-        Chunk::new(0, -1, 0),
-        Chunk::new(0, 0, 1),
-        Chunk::new(0, 0, -1),
-        Chunk::new(1, 0, 0),
-        Chunk::new(-1, 0, 0),
-    ];
-
-    for chunk in chunks.iter_mut() {
-        for x in 0..CHUNK_SIZE.0 {
-            for y in 0..CHUNK_SIZE.1 {
-                for z in 0..CHUNK_SIZE.2 {
-                    let v = perlin::noise_3d((x as isize + (chunk.position.0 * CHUNK_SIZE.0 as isize)) as f32, (y as isize + (chunk.position.1 * CHUNK_SIZE.1 as isize)) as f32, (z as isize + (chunk.position.2 * CHUNK_SIZE.2 as isize)) as f32);
-                    if v > 10.0 {
-                        chunk.set_block((x, y, z), Block::Debug);
-                    }
-                }
-            }
-        }
-    }
-
-    // let voxel = Voxel {
-    //     id: Block::Debug,
-    //     sides: VoxelSide::vec_from_axis_vec(&vec![
-    //         Axis::North,
-    //         Axis::South,
-    //         Axis::East,
-    //         Axis::West,
-    //         Axis::Up,
-    //         Axis::Down,
-    //     ], (0, 0, 0)),
-    // };
-
-    // let cube_mesh = voxel.into_mesh();
-
-    for chunk in chunks.iter() {
-        cmds.spawn(
-            PbrBundle {
-                mesh: meshes.add(chunk.draw()),
-                material: materials.add(StandardMaterial {
-                    base_color: Color::rgb(1.0, 0.2, 1.0),
-                    double_sided: true,
-                    cull_mode: None,
-                    ..default()
-                }),
-                transform: Transform::from_xyz((0 + chunk.position.0 * CHUNK_SIZE.0 as isize) as f32, (0 + chunk.position.1 * CHUNK_SIZE.1 as isize) as f32, (0 + chunk.position.2 * CHUNK_SIZE.2 as isize) as f32),
-                ..default()
-            }
-        );
-    }
-
-    // cmds.spawn(
-    //     PbrBundle {
-    //         mesh: meshes.add(cube_mesh),
-    //         material: materials.add(Color::rgb(0.2, 1.0, 1.0).into()),
-    //         transform: Transform::from_xyz(0.0, 0.0, 0.0),
-    //         ..default()
-    //     }
-    // );
-
     cmds.spawn(
         PointLightBundle {
             point_light: PointLight {
-                intensity: 9500.0,
+                intensity: 95000.0,
                 shadows_enabled: true,
-                range: 100.0,
+                range: 400.0,
                 ..default()
             },
-            transform: Transform::from_xyz(20.5, 30.3, 20.2),
+            transform: Transform::from_xyz(55.5, 110.3, 110.2),
             ..default()
         }
     );
@@ -142,7 +84,7 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(35.0, 60.0, 60.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            transform: Transform::from_xyz(85.0, 110.0, 110.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         },
 
