@@ -7,7 +7,7 @@ pub fn noise_3d(x: f32, y: f32, z: f32) -> f32 {
 
     println!("DEBUG: COORDS: {}, {}, {}", x, y, z);
 
-    let amp = 50.0;
+    let amp = 100.0;
     let freq = 0.15;
     let octaves = 8;
 

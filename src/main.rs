@@ -63,47 +63,58 @@ fn transform_system(mut query: Query<&mut Transform, Without<StaticObj>>, time: 
 struct StaticObj;
 
 fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
-    let mut chunk = Chunk::new(0, 0, 0);
+    let mut chunks = vec![
+        Chunk::new(0, 0, 0),
+        Chunk::new(0, 1, 0),
+        Chunk::new(0, -1, 0),
+        Chunk::new(0, 0, 1),
+        Chunk::new(0, 0, -1),
+        Chunk::new(1, 0, 0),
+        Chunk::new(-1, 0, 0),
+    ];
 
-    for x in 0..CHUNK_SIZE.0 {
-        for y in 0..CHUNK_SIZE.1 {
-            for z in 0..CHUNK_SIZE.2 {
-                let v = perlin::noise_3d(x as f32, y as f32, z as f32);
-                // println!("DEBUG: {}", v);
-                if v > 5.0 {
-                    chunk.set_block((x, y, z), Block::Debug);
+    for chunk in chunks.iter_mut() {
+        for x in 0..CHUNK_SIZE.0 {
+            for y in 0..CHUNK_SIZE.1 {
+                for z in 0..CHUNK_SIZE.2 {
+                    let v = perlin::noise_3d((x as isize + (chunk.position.0 * CHUNK_SIZE.0 as isize)) as f32, (y as isize + (chunk.position.1 * CHUNK_SIZE.1 as isize)) as f32, (z as isize + (chunk.position.2 * CHUNK_SIZE.2 as isize)) as f32);
+                    if v > 10.0 {
+                        chunk.set_block((x, y, z), Block::Debug);
+                    }
                 }
             }
         }
     }
 
-    let voxel = Voxel {
-        id: Block::Debug,
-        sides: VoxelSide::vec_from_axis_vec(&vec![
-            Axis::North,
-            Axis::South,
-            Axis::East,
-            Axis::West,
-            Axis::Up,
-            Axis::Down,
-        ], (0, 0, 0)),
-    };
+    // let voxel = Voxel {
+    //     id: Block::Debug,
+    //     sides: VoxelSide::vec_from_axis_vec(&vec![
+    //         Axis::North,
+    //         Axis::South,
+    //         Axis::East,
+    //         Axis::West,
+    //         Axis::Up,
+    //         Axis::Down,
+    //     ], (0, 0, 0)),
+    // };
 
-    let cube_mesh = voxel.into_mesh();
+    // let cube_mesh = voxel.into_mesh();
 
-    cmds.spawn(
-        PbrBundle {
-            mesh: meshes.add(chunk.draw()),
-            material: materials.add(StandardMaterial {
-                base_color: Color::rgb(1.0, 0.2, 1.0),
-                double_sided: true,
-                cull_mode: None,
+    for chunk in chunks.iter() {
+        cmds.spawn(
+            PbrBundle {
+                mesh: meshes.add(chunk.draw()),
+                material: materials.add(StandardMaterial {
+                    base_color: Color::rgb(1.0, 0.2, 1.0),
+                    double_sided: true,
+                    cull_mode: None,
+                    ..default()
+                }),
+                transform: Transform::from_xyz((0 + chunk.position.0 * CHUNK_SIZE.0 as isize) as f32, (0 + chunk.position.1 * CHUNK_SIZE.1 as isize) as f32, (0 + chunk.position.2 * CHUNK_SIZE.2 as isize) as f32),
                 ..default()
-            }),
-            transform: Transform::from_xyz(-5.0, 0.0, 0.0),
-            ..default()
-        }
-    );
+            }
+        );
+    }
 
     // cmds.spawn(
     //     PbrBundle {
@@ -131,7 +142,7 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(15.0, 40.0, 40.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            transform: Transform::from_xyz(35.0, 60.0, 60.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         },
 

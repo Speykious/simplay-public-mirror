@@ -39,7 +39,7 @@ impl ChunkHashMap {
 
 #[derive(Debug)]
 pub struct Chunk {
-    pub position: Vec3,
+    pub position: (isize, isize, isize),
     pub blocks: ChunkHashMap,
     pub mesh: Option<Mesh>,
 }
@@ -47,7 +47,7 @@ pub struct Chunk {
 impl Chunk {
     pub fn new(x: isize, y: isize, z: isize) -> Self {
         return Chunk {
-            position: Vec3::new(x as f32, y as f32, z as f32),
+            position: (x, y, z),
             blocks: Self::init_blocks(),
             mesh: None,
         };
@@ -73,29 +73,29 @@ impl Chunk {
         return create_mesh(&vertices, &indices);
     }
 
-    fn visible_sides_special_cases(&self, x: i8, y: i8, z: i8) -> Option<Vec<Axis>> {
-        let mut sides: Vec<Axis> = Vec::new();
+    // fn visible_sides_special_cases(&self, x: i8, y: i8, z: i8) -> Option<Vec<Axis>> {
+    //     let mut sides: Vec<Axis> = Vec::new();
 
-        if HIDE_EDGE_FACES == false {
-            if x == 0 {
-                sides.push(Axis::West);
-            }
+    //     if HIDE_EDGE_FACES == false {
+    //         if x == 0 {
+    //             sides.push(Axis::West);
+    //         }
 
-            if y == 0 {
-                sides.push(Axis::Down);
-            }
+    //         if y == 0 {
+    //             sides.push(Axis::Down);
+    //         }
 
-            if z == 0 {
-                sides.push(Axis::North);
-            }
-        }
+    //         if z == 0 {
+    //             sides.push(Axis::North);
+    //         }
+    //     }
 
-        if sides.len() == 0 {
-            return None;
-        } else {
-            return Some(sides);
-        }
-    }
+    //     if sides.len() == 0 {
+    //         return None;
+    //     } else {
+    //         return Some(sides);
+    //     }
+    // }
 
     pub fn visible_sides(&self, x: u8, y: u8, z: u8) -> Vec<Axis> {
         let axis_list = Axis::vec_all();
@@ -107,10 +107,10 @@ impl Chunk {
         let mut vsides: Vec<Axis> = Vec::new();
 
         for i in Axis::vec_all() {
-            match self.visible_sides_special_cases(x as i8, y as i8, z as i8) {
-                Some(s) => return s,
-                None => {},
-            };
+            // match self.visible_sides_special_cases(x as i8, y as i8, z as i8) {
+            //     Some(s) => return s,
+            //     None => {},
+            // };
 
             let (ox, oy, oz) = i.coord_offset_from(x.into(), y.into(), z.into());
 
