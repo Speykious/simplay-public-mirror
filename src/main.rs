@@ -2,6 +2,7 @@ mod voxel;
 mod world;
 mod library;
 mod chunk;
+mod perlin;
 
 use bevy::prelude::*;
 use world::Axis;
@@ -67,15 +68,14 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
     for x in 0..CHUNK_SIZE.0 {
         for y in 0..CHUNK_SIZE.1 {
             for z in 0..CHUNK_SIZE.2 {
-                let r = randint(0..10);
-                if r == 0 {
+                let v = perlin::noise_3d(x as f32, y as f32, z as f32);
+                // println!("DEBUG: {}", v);
+                if v > 5.0 {
                     chunk.set_block((x, y, z), Block::Debug);
                 }
             }
         }
     }
-
-    // chunk.set_block((0, 1, 0), Block::Debug);
 
     let voxel = Voxel {
         id: Block::Debug,
@@ -100,7 +100,7 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
                 cull_mode: None,
                 ..default()
             }),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            transform: Transform::from_xyz(-5.0, 0.0, 0.0),
             ..default()
         }
     );
@@ -131,7 +131,7 @@ fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: Re
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(30.0, 30.0, 30.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
+            transform: Transform::from_xyz(15.0, 40.0, 40.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         },
 
