@@ -3,7 +3,7 @@
 use bracket_noise::prelude::*;
 
 pub fn noise_3d(x: f32, y: f32, z: f32) -> f32 {
-    let mut noise = FastNoise::seeded(2386972359623);
+    let mut noise = FastNoise::seeded(27647547657544565);
 
     let amp = 200.0;
     let freq = 0.1;
