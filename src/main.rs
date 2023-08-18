@@ -6,6 +6,10 @@ mod chunk_manager;
 mod perlin;
 
 use bevy::prelude::*;
+use bevy::pbr::wireframe::*;
+use bevy::render::render_resource::WgpuFeatures;
+use bevy::render::settings::WgpuSettings;
+use bevy::render::RenderPlugin;
 use world::Axis;
 use voxel::*;
 use chunk::*;
@@ -15,6 +19,7 @@ use chunk_manager::*;
 const ROTATE: bool = false;
 const ROTATE_DETAILS: (bool, bool, bool) = (false, true, false);
 const MOVE: bool = false;
+const WIREFRAME: bool = true;
 
 fn test_code() {
 }
@@ -23,15 +28,22 @@ fn main() {
     test_code();
 
     App::new()
-        .add_plugins(DefaultPlugins.set(
+        .add_plugins((DefaultPlugins.set(
             WindowPlugin {
                 primary_window: Some(Window {
                     title: "Simplay Survival".into(),
                     ..default()
                 }),
                 ..default()
+            },
+        ).set(
+            RenderPlugin {
+                wgpu_settings: WgpuSettings {
+                    features: WgpuFeatures::POLYGON_MODE_LINE,
+                    ..default()
+                }
             }
-        ))
+        ), WireframePlugin))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .insert_resource(ChunkManager::new())
         .add_systems(Startup, spawn_camera)
@@ -66,7 +78,14 @@ fn transform_system(mut query: Query<&mut Transform, Without<StaticObj>>, time: 
 #[derive(Component)]
 struct StaticObj;
 
-fn setup(mut cmds: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn setup(
+    mut cmds: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut wireframe_config: ResMut<WireframeConfig>,
+) {
+    wireframe_config.global = WIREFRAME;
+
     cmds.spawn(
         PointLightBundle {
             point_light: PointLight {
