@@ -11,6 +11,7 @@ pub struct BlockProperties {
     pub hardness: u8, // This basically calculates how hard it is to move through the block. (u8::MIN = nothing, u8::MAX completely solid)
     pub drop: Option<Block>,
     pub textures: [Option<usize>; 6],
+    pub null: bool, // This is to tell if the block is just there as a filler, or as a real block. (false = real block, true = filler block)
 }
 
 impl BlockProperties {
@@ -22,6 +23,7 @@ impl BlockProperties {
             textures: [
                 Some(0); 6
             ],
+            null: false,
         };
     }
 }
@@ -58,6 +60,7 @@ impl Block {
                 textures: [
                     None; 6
                 ],
+                null: true,
                 ..BlockProperties::default()
             },
         };
@@ -69,6 +72,7 @@ impl Block {
 pub struct Voxel {
     pub id: Block,
     pub sides: Vec<VoxelSide>,
+    pub use_mesh: bool, // This is for greedy meshing.
 }
 
 impl Voxel {
