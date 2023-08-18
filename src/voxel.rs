@@ -29,7 +29,7 @@ impl BlockProperties {
 }
 
 // Block types.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Block {
     Void, // Basically null.
     Air,
@@ -95,14 +95,16 @@ impl Voxel {
 #[derive(Debug, PartialEq)]
 pub struct VoxelSide {
     pub side: Axis,
+    pub size: (u8, u8, u8),
     pub vertices: Vec<([f32; 3], [f32; 3], [f32; 2])>,
     pub indices: Vec<u32>,
     pub pos: (u8, u8, u8),
 }
 
 impl VoxelSide {
-    pub fn new(side: Axis, pos: (u8, u8, u8)) -> Self {
-        let (min_x, min_y, min_z) = (-0.5, -0.5, -0.5);
+    pub fn new(side: Axis, pos: (u8, u8, u8), size: (u8, u8, u8)) -> Self {
+        // let (min_x, min_y, min_z) = (-0.5 - (size.0 - 1) as f32, -0.5 - (size.1 - 1) as f32, -0.5 - (size.2 - 1) as f32);
+        let (min_x, min_y, min_z) = (-0.5, -0.5 - (size.1 - 1) as f32, -0.5);
         let (max_x, max_y, max_z) = (0.5, 0.5, 0.5);
 
         let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
@@ -174,17 +176,18 @@ impl VoxelSide {
 
         return Self {
             side,
+            size,
             pos,
             vertices,
             indices,
         };
     }
 
-    pub fn vec_from_axis_vec(axis_vec: &Vec<Axis>, pos: (u8, u8, u8)) -> Vec<Self> {
+    pub fn vec_from_axis_vec(axis_vec: &Vec<Axis>, size_vec: &Vec<(u8, u8, u8)>, pos: (u8, u8, u8)) -> Vec<Self> {
         let mut face_vec: Vec<Self> = Vec::new();
 
-        for i in axis_vec.iter() {
-            face_vec.push(Self::new(*i, pos));
+        for (i, j) in axis_vec.iter().zip(size_vec) {
+            face_vec.push(Self::new(*i, pos, *j));
         }
 
         return face_vec;

@@ -9,7 +9,7 @@ use crate::library::*;
 // ==== DEBUG SETTINGS ====
 const CULL_FACES: bool = true;
 const HIDE_EDGE_FACES: bool = true;
-const GREEDY_MESHING: bool = true;
+const GREEDY_MESHING: bool = false;
 // ========================
 
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
@@ -17,12 +17,14 @@ pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 #[derive(Debug, Clone)]
 pub struct ChunkHashMap {
     map: HashMap<(u8, u8, u8), Block>,
+    enabled_meshes: HashMap<(u8, u8, u8), bool>,
 }
 
 impl ChunkHashMap {
     pub fn new() -> Self {
         return Self {
             map: HashMap::new(),
+            enabled_meshes: HashMap::new(),
         };
     }
 
@@ -34,6 +36,17 @@ impl ChunkHashMap {
         return match self.map.get(&c) {
             Some(s) => *s,
             None => Block::Air,
+        };
+    }
+
+    pub fn enable_mesh(&mut self, pos: (u8, u8, u8), enable: bool) {
+        self.enabled_meshes.insert(pos, enable);
+    }
+
+    pub fn mesh_enabled(&self, x: u8, y: u8, z: u8) -> bool {
+        return match self.enabled_meshes.get(&(x, y, z)) {
+            Some(s) => *s,
+            None => true,
         };
     }
 }
@@ -54,75 +67,109 @@ impl Chunk {
         };
     }
 
-    pub fn draw(&self) -> Mesh {
+    fn auto_enable_block_meshes(&mut self) {
+        if GREEDY_MESHING == false {
+            return;
+        }
+
+        for x in 0..CHUNK_SIZE.0 {
+            for y in 0..CHUNK_SIZE.1 {
+                for z in 0..CHUNK_SIZE.2 {
+                    let block = self.get_block(x, y, z);
+
+                    if y > 0 {
+                        if block == self.get_block(x, y - 1, z) {
+                            self.blocks.enable_mesh((x, y - 1, z), false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn draw(&mut self) -> Mesh {
         let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
+
+        self.auto_enable_block_meshes();
 
         for i in self.blocks.map.iter() {
             let (x, y, z) = (i.0.0, i.0.1, i.0.2);
 
+            let vinfo = self.visible_info(x, y, z);
+
             let block = self.blocks.get((x, y, z));
-            let sides = VoxelSide::vec_from_axis_vec(&self.visible_sides(x, y, z), (x, y, z));
+            let sides = VoxelSide::vec_from_axis_vec(&vinfo.sides, &vinfo.sizes, (x, y, z));
 
-            for j in sides.iter() {
-                vertices.extend(j.vertices.clone());
+            if self.blocks.mesh_enabled(x, y, z) {
+                for j in sides.iter() {
+                    vertices.extend(j.vertices.clone());
 
-                indices = combine_indices(&vec![indices, j.indices.clone()]);
+                    indices = combine_indices(&vec![indices, j.indices.clone()]);
+                }
             }
         }
 
         return create_mesh(&vertices, &indices);
     }
 
-    // fn visible_sides_special_cases(&self, x: i8, y: i8, z: i8) -> Option<Vec<Axis>> {
-    //     let mut sides: Vec<Axis> = Vec::new();
-
-    //     if HIDE_EDGE_FACES == false {
-    //         if x == 0 {
-    //             sides.push(Axis::West);
-    //         }
-
-    //         if y == 0 {
-    //             sides.push(Axis::Down);
-    //         }
-
-    //         if z == 0 {
-    //             sides.push(Axis::North);
-    //         }
-    //     }
-
-    //     if sides.len() == 0 {
-    //         return None;
-    //     } else {
-    //         return Some(sides);
-    //     }
-    // }
-
-    pub fn visible_sides(&self, x: u8, y: u8, z: u8) -> Vec<Axis> {
+    // This function is for seeing whether a block should have
+    // certain faces, or if the mesh is disabled, or anything like that.
+    fn visible_info(&self, x: u8, y: u8, z: u8) -> VisibleInfo {
         let axis_list = Axis::vec_all();
+        let size_list: Vec<(u8, u8, u8)> = vec![
+            (1, 1, 1),
+            (1, 1, 1),
+            (1, 1, 1),
+            (1, 1, 1),
+            (1, 1, 1),
+            (1, 1, 1),
+        ];
 
         if CULL_FACES == false {
-            return axis_list;
+            return VisibleInfo {
+                sides: axis_list,
+                sizes: size_list,
+            };
         }
 
         let mut vsides: Vec<Axis> = Vec::new();
+        let mut vsizes: Vec<(u8, u8, u8)> = Vec::new();
 
-        for i in Axis::vec_all() {
-            // match self.visible_sides_special_cases(x as i8, y as i8, z as i8) {
-            //     Some(s) => return s,
-            //     None => {},
-            // };
-
+        for i in axis_list.iter() {
             let (ox, oy, oz) = i.coord_offset_from(x.into(), y.into(), z.into());
 
-            let p = self.get_block(ox as u8, oy as u8, oz as u8).properties();
+            let block = self.get_block(ox as u8, oy as u8, oz as u8);
+
+            if oy > 0 {
+                if self.get_block(ox as u8, (oy as u8) - 1, oz as u8) == block {
+                    vsizes.push((1, 2, 1));
+                }
+
+                else {
+                    vsizes.push((1, 1, 1));
+                }
+            }
+
+            else {
+                vsizes.push((1, 1, 1));
+            }
+
+            let p = block.properties();
 
             if p.transparent == true {
-                vsides.push(i);
+                vsides.push(*i);
             }
         }
 
-        return vsides;
+        if GREEDY_MESHING == false {
+            vsizes = size_list;
+        }
+
+        return VisibleInfo {
+            sides: vsides,
+            sizes: vsizes,
+        };
     }
 
     pub fn set_block(&mut self, pos: (u8, u8, u8), type_id: Block) {
@@ -241,4 +288,9 @@ impl Chunk {
 
         return local_pos;
     }
+}
+
+struct VisibleInfo {
+    sides: Vec<Axis>,
+    sizes: Vec<(u8, u8, u8)>,
 }

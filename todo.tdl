@@ -2,4 +2,4 @@
 [*] >> Perlin noise.
 [ ] >> Refactor noise.
 [-] >> Make a chunk manager for spawn and deleting chunks.
-[ ] >> Greedy meshing.
+[-] >> Greedy meshing.
