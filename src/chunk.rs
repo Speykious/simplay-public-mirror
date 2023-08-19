@@ -128,43 +128,45 @@ impl Chunk {
             let gmt = a.greedy_mesh_traverse_coords();
 
             if gmt.contains(&AxisCoord::X) && gmt.contains(&AxisCoord::Y) {
-                for y in 0..CHUNK_SIZE.1 {
-                    for x in 1..CHUNK_SIZE.0 {
-                        if self.get_block(x, y, 0) != self.get_block(x - 1, y, 0) {
-                            continue;
+                for z in [0, CHUNK_SIZE.2 - 1] {
+                    for y in 0..CHUNK_SIZE.1 {
+                        for x in 1..CHUNK_SIZE.0 {
+                            if self.get_block(x, y, z) != self.get_block(x - 1, y, z) {
+                                continue;
+                            }
+
+                            let fs1 = self.blocks.get_face_size((x, y, z), a);
+                            let fs2 = self.blocks.get_face_size((x - 1, y, z), a);
+
+                            self.blocks.set_face_size((x, y, z), a, (fs1.0 + fs2.0, fs1.1, fs1.2));
+                            self.blocks.disable_mesh((x - 1, y, z), a);
                         }
-
-                        let fs1 = self.blocks.get_face_size((x, y, 0), a);
-                        let fs2 = self.blocks.get_face_size((x - 1, y, 0), a);
-
-                        self.blocks.set_face_size((x, y, 0), a, (fs1.0 + fs2.0, fs1.1, fs1.2));
-                        self.blocks.disable_mesh((x - 1, y, 0), a);
                     }
-                }
 
-                for x in 0..CHUNK_SIZE.0 {
-                    for y in 1..CHUNK_SIZE.1 {
-                        if self.blocks.mesh_enabled((x, y, 0), a) == false {
-                            continue;
+                    for x in 0..CHUNK_SIZE.0 {
+                        for y in 1..CHUNK_SIZE.1 {
+                            if self.blocks.mesh_enabled((x, y, z), a) == false {
+                                continue;
+                            }
+
+                            if self.blocks.mesh_enabled((x, y - 1, z), a) == false {
+                                continue;
+                            }
+
+                            if self.get_block(x, y, z) != self.get_block(x, y - 1, z) {
+                                continue;
+                            }
+
+                            let fs1 = self.blocks.get_face_size((x, y, z), a);
+                            let fs2 = self.blocks.get_face_size((x, y - 1, z), a);
+
+                            if fs1.0 != fs2.0 {
+                                continue;
+                            }
+
+                            self.blocks.set_face_size((x, y, z), a, (fs1.0, fs1.1 + fs2.1, fs1.2));
+                            self.blocks.disable_mesh((x, y - 1, z), a);
                         }
-
-                        if self.blocks.mesh_enabled((x, y - 1, 0), a) == false {
-                            continue;
-                        }
-
-                        if self.get_block(x, y, 0) != self.get_block(x, y - 1, 0) {
-                            continue;
-                        }
-
-                        let fs1 = self.blocks.get_face_size((x, y, 0), a);
-                        let fs2 = self.blocks.get_face_size((x, y - 1, 0), a);
-
-                        if fs1.0 != fs2.0 {
-                            continue;
-                        }
-
-                        self.blocks.set_face_size((x, y, 0), a, (fs1.0, fs1.1 + fs2.1, fs1.2));
-                        self.blocks.disable_mesh((x, y - 1, 0), a);
                     }
                 }
             }
