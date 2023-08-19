@@ -19,7 +19,7 @@ use chunk::*;
 use library::*;
 use chunk_manager::*;
 
-const ROTATE: bool = false;
+const ROTATE: bool = true;
 const ROTATE_DETAILS: (bool, bool, bool) = (false, true, false);
 const MOVE: bool = false;
 const WIREFRAME: bool = true;
@@ -68,9 +68,9 @@ fn transform_system(
     if ROTATE {
         for mut i in query.iter_mut() {
             if ROTATE_DETAILS.0 {
-                i.rotate(Quat::from_rotation_x(3.0 * time.delta_seconds()));
+                i.rotate(Quat::from_rotation_x(1.5 * time.delta_seconds()));
             } if ROTATE_DETAILS.1 {
-                i.rotate(Quat::from_rotation_y(2.0 * time.delta_seconds()));
+                i.rotate(Quat::from_rotation_y(1.25 * time.delta_seconds()));
             } if ROTATE_DETAILS.2 {
                 i.rotate(Quat::from_rotation_z(1.0 * time.delta_seconds()));
             }

@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum AxisCoord {
     X,
     Y,
     Z,
 }
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, Hash, Eq)]
 pub enum Axis {
     North,
     South,
@@ -27,6 +27,28 @@ impl Axis {
             Axis::Up,
             Axis::Down,
         ];
+    }
+
+    pub fn greedy_mesh_traverse_coords(&self) -> [AxisCoord; 2] {
+        return match self {
+            Self::North => [AxisCoord::X, AxisCoord::Y],
+            Self::South => [AxisCoord::X, AxisCoord::Y],
+            Self::East => [AxisCoord::Y, AxisCoord::Z],
+            Self::West => [AxisCoord::Y, AxisCoord::Z],
+            Self::Up => [AxisCoord::X, AxisCoord::Z],
+            Self::Down => [AxisCoord::X, AxisCoord::Z],
+        };
+    }
+
+    pub fn axis_direction(&self) -> AxisCoord {
+        return match self {
+            Self::North => AxisCoord::Z,
+            Self::South => AxisCoord::Z,
+            Self::East => AxisCoord::X,
+            Self::West => AxisCoord::X,
+            Self::Up => AxisCoord::Y,
+            Self::Down => AxisCoord::Y,
+        };
     }
 
     pub fn coord_offset(&self) -> (i8, i8, i8) {

@@ -9,7 +9,7 @@ use crate::library::*;
 // ==== DEBUG SETTINGS ====
 const CULL_FACES: bool = true;
 const HIDE_EDGE_FACES: bool = true;
-const GREEDY_MESHING: bool = false;
+const GREEDY_MESHING: bool = true;
 // ========================
 
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
@@ -17,7 +17,8 @@ pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 #[derive(Debug, Clone)]
 pub struct ChunkHashMap {
     map: HashMap<(u8, u8, u8), Block>,
-    enabled_meshes: HashMap<(u8, u8, u8), bool>,
+    enabled_meshes: HashMap<((u8, u8, u8), Axis), bool>,
+    mesh_sizes: HashMap<((u8, u8, u8), Axis), (u8, u8, u8)>,
 }
 
 impl ChunkHashMap {
@@ -25,6 +26,7 @@ impl ChunkHashMap {
         return Self {
             map: HashMap::new(),
             enabled_meshes: HashMap::new(),
+            mesh_sizes: HashMap::new(),
         };
     }
 
@@ -39,14 +41,33 @@ impl ChunkHashMap {
         };
     }
 
-    pub fn enable_mesh(&mut self, pos: (u8, u8, u8), enable: bool) {
-        self.enabled_meshes.insert(pos, enable);
+    pub fn enable_disable_mesh(&mut self, pos: (u8, u8, u8), side: Axis, enable: bool) {
+        self.enabled_meshes.insert((pos, side), enable);
     }
 
-    pub fn mesh_enabled(&self, x: u8, y: u8, z: u8) -> bool {
-        return match self.enabled_meshes.get(&(x, y, z)) {
+    pub fn disable_mesh(&mut self, pos: (u8, u8, u8), side: Axis) {
+        self.enable_disable_mesh(pos, side, false);
+    }
+
+    pub fn enable_mesh(&mut self, pos: (u8, u8, u8), side: Axis) {
+        self.enable_disable_mesh(pos, side, true);
+    }
+
+    pub fn mesh_enabled(&self, pos: (u8, u8, u8), side: Axis) -> bool {
+        return match self.enabled_meshes.get(&(pos, side)) {
             Some(s) => *s,
             None => true,
+        };
+    }
+
+    pub fn set_face_size(&mut self, pos: (u8, u8, u8), side: Axis, size: (u8, u8, u8)) {
+        self.mesh_sizes.insert((pos, side), size);
+    }
+
+    pub fn get_face_size(&self, pos: (u8, u8, u8), side: Axis) -> (u8, u8, u8) {
+        return match self.mesh_sizes.get(&(pos, side)) {
+            Some(s) => *s,
+            None => (1, 1, 1),
         };
     }
 }
@@ -67,44 +88,29 @@ impl Chunk {
         };
     }
 
-    fn auto_enable_block_meshes(&mut self) {
-        if GREEDY_MESHING == false {
-            return;
-        }
-
-        for x in 0..CHUNK_SIZE.0 {
-            for y in 0..CHUNK_SIZE.1 {
-                for z in 0..CHUNK_SIZE.2 {
-                    let block = self.get_block(x, y, z);
-
-                    if y > 0 {
-                        if block == self.get_block(x, y - 1, z) {
-                            self.blocks.enable_mesh((x, y - 1, z), false);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     pub fn draw(&mut self) -> Mesh {
         let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
 
-        self.auto_enable_block_meshes();
+        self.greedy_mesh();
 
-        for i in self.blocks.map.iter() {
+        for i in self.clone().blocks.map.iter() {
             let (x, y, z) = (i.0.0, i.0.1, i.0.2);
 
             let vinfo = self.visible_info(x, y, z);
 
+            let mut vsizes: Vec<(u8, u8, u8)> = Vec::new();
+
+            for i in Axis::vec_all() {
+                vsizes.push(self.blocks.get_face_size((x, y, z), i));
+            }
+
             let block = self.blocks.get((x, y, z));
-            let sides = VoxelSide::vec_from_axis_vec(&vinfo.sides, &vinfo.sizes, (x, y, z));
+            let sides = VoxelSide::vec_from_axis_vec(&vinfo.sides, &vsizes, (x, y, z));
 
-            if self.blocks.mesh_enabled(x, y, z) {
-                for j in sides.iter() {
+            for j in sides.iter() {
+                if self.blocks.mesh_enabled((x, y, z), j.side) {
                     vertices.extend(j.vertices.clone());
-
                     indices = combine_indices(&vec![indices, j.indices.clone()]);
                 }
             }
@@ -113,9 +119,61 @@ impl Chunk {
         return create_mesh(&vertices, &indices);
     }
 
+    fn greedy_mesh(&mut self) {
+        if GREEDY_MESHING == false {
+            return;
+        }
+
+        for a in Axis::vec_all() {
+            let gmt = a.greedy_mesh_traverse_coords();
+
+            if gmt.contains(&AxisCoord::X) && gmt.contains(&AxisCoord::Y) {
+                for y in 0..CHUNK_SIZE.1 {
+                    for x in 1..CHUNK_SIZE.0 {
+                        if self.get_block(x, y, 0) != self.get_block(x - 1, y, 0) {
+                            continue;
+                        }
+
+                        let fs1 = self.blocks.get_face_size((x, y, 0), a);
+                        let fs2 = self.blocks.get_face_size((x - 1, y, 0), a);
+
+                        self.blocks.set_face_size((x, y, 0), a, (fs1.0 + fs2.0, fs1.1, fs1.2));
+                        self.blocks.disable_mesh((x - 1, y, 0), a);
+                    }
+                }
+
+                for x in 0..CHUNK_SIZE.0 {
+                    for y in 1..CHUNK_SIZE.1 {
+                        if self.blocks.mesh_enabled((x, y, 0), a) == false {
+                            continue;
+                        }
+
+                        if self.blocks.mesh_enabled((x, y - 1, 0), a) == false {
+                            continue;
+                        }
+
+                        if self.get_block(x, y, 0) != self.get_block(x, y - 1, 0) {
+                            continue;
+                        }
+
+                        let fs1 = self.blocks.get_face_size((x, y, 0), a);
+                        let fs2 = self.blocks.get_face_size((x, y - 1, 0), a);
+
+                        if fs1.0 != fs2.0 {
+                            continue;
+                        }
+
+                        self.blocks.set_face_size((x, y, 0), a, (fs1.0, fs1.1 + fs2.1, fs1.2));
+                        self.blocks.disable_mesh((x, y - 1, 0), a);
+                    }
+                }
+            }
+        }
+    }
+
     // This function is for seeing whether a block should have
     // certain faces, or if the mesh is disabled, or anything like that.
-    fn visible_info(&self, x: u8, y: u8, z: u8) -> VisibleInfo {
+    fn visible_info(&mut self, x: u8, y: u8, z: u8) -> VisibleInfo {
         let axis_list = Axis::vec_all();
         let size_list: Vec<(u8, u8, u8)> = vec![
             (1, 1, 1),
@@ -141,26 +199,14 @@ impl Chunk {
 
             let block = self.get_block(ox as u8, oy as u8, oz as u8);
 
-            if oy > 0 {
-                if self.get_block(ox as u8, (oy as u8) - 1, oz as u8) == block {
-                    vsizes.push((1, 2, 1));
-                }
-
-                else {
-                    vsizes.push((1, 1, 1));
-                }
-            }
-
-            else {
-                vsizes.push((1, 1, 1));
-            }
-
             let p = block.properties();
 
-            if p.transparent == true {
+            if p.transparent == true && self.get_block(x, y, z).properties().transparent == false {
                 vsides.push(*i);
             }
         }
+
+        vsizes = size_list.clone(); // TMP
 
         if GREEDY_MESHING == false {
             vsizes = size_list;

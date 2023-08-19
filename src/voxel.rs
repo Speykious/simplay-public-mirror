@@ -103,8 +103,7 @@ pub struct VoxelSide {
 
 impl VoxelSide {
     pub fn new(side: Axis, pos: (u8, u8, u8), size: (u8, u8, u8)) -> Self {
-        // let (min_x, min_y, min_z) = (-0.5 - (size.0 - 1) as f32, -0.5 - (size.1 - 1) as f32, -0.5 - (size.2 - 1) as f32);
-        let (min_x, min_y, min_z) = (-0.5, -0.5 - (size.1 - 1) as f32, -0.5);
+        let (min_x, min_y, min_z) = (-0.5 - (size.0 - 1) as f32, -0.5 - (size.1 - 1) as f32, -0.5 - (size.2 - 1) as f32);
         let (max_x, max_y, max_z) = (0.5, 0.5, 0.5);
 
         let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
