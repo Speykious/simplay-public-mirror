@@ -92,7 +92,7 @@ impl Chunk {
         let mut vertices: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
         let mut indices: Vec<u32> = Vec::new();
 
-        self.greedy_mesh();
+        self.greedy_mesher();
 
         for i in self.clone().blocks.map.iter() {
             let (x, y, z) = (i.0.0, i.0.1, i.0.2);
@@ -119,7 +119,7 @@ impl Chunk {
         return create_mesh(&vertices, &indices);
     }
 
-    fn greedy_mesh(&mut self) {
+    fn greedy_mesher(&mut self) {
         if GREEDY_MESHING == false {
             return;
         }
