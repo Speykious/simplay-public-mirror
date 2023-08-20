@@ -3,3 +3,4 @@
 [ ] >> Refactor noise.
 [-] >> Make a chunk manager for spawn and deleting chunks.
 [-] >> Greedy meshing.
+[ ] >> Cull neighboring chunk faces.
