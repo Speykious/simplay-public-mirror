@@ -8,8 +8,7 @@ use crate::library::*;
 
 // ==== DEBUG SETTINGS ====
 const CULL_FACES: bool = true;
-const HIDE_EDGE_FACES: bool = true;
-const GREEDY_MESHING: bool = true;
+const GREEDY_MESHING: bool = false;
 // ========================
 
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
