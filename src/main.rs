@@ -68,11 +68,11 @@ fn transform_system(
     if ROTATE {
         for mut i in query.iter_mut() {
             if ROTATE_DETAILS.0 {
-                i.rotate(Quat::from_rotation_x(1.5 * time.delta_seconds()));
+                i.rotate(Quat::from_rotation_x(0.5 * time.delta_seconds()));
             } if ROTATE_DETAILS.1 {
-                i.rotate(Quat::from_rotation_y(1.25 * time.delta_seconds()));
+                i.rotate(Quat::from_rotation_y(0.25 * time.delta_seconds()));
             } if ROTATE_DETAILS.2 {
-                i.rotate(Quat::from_rotation_z(1.0 * time.delta_seconds()));
+                i.rotate(Quat::from_rotation_z(0.0 * time.delta_seconds()));
             }
         }
     }
