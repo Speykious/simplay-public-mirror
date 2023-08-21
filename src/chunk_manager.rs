@@ -7,9 +7,9 @@ use crate::voxel::*;
 use crate::perlin;
 
 pub fn chunk_manager_system(mut cmds: Commands, mut cm: ResMut<ChunkManager>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
-    for cx in 0..2 {
-        for cy in 0..2 {
-            for cz in 0..2 {
+    for cx in 0..8 {
+        for cy in 0..1 {
+            for cz in 0..8 {
                 if cm.chunks.chunk_exists(cx, cy, cz) {
                     break;
                 }

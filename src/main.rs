@@ -19,11 +19,12 @@ use chunk::*;
 use library::*;
 use chunk_manager::*;
 
-const ROTATE: bool = true;
+const ROTATE: bool = false;
 const ROTATE_DETAILS: (bool, bool, bool) = (false, true, false);
 const MOVE: bool = false;
 const WIREFRAME: bool = true;
 const DEBUG_MOUSE_MOVE: bool = true;
+const ROTATE_CAMERA: bool = true;
 
 fn test_code() {
 }
@@ -59,7 +60,7 @@ fn main() {
 
 fn transform_system(
     mut query: Query<&mut Transform, Without<StaticObj>>,
-    camera_query: Query<&Transform, (With<Camera3d>, With<StaticObj>)>,
+    mut camera_query: Query<&mut Transform, (With<Camera3d>, With<StaticObj>)>,
     time: Res<Time>,
     // mousebtn_input: Res<Input<MouseButton>>,
     mut mousebtn_evr: EventReader<MouseButtonInput>,
@@ -125,6 +126,12 @@ fn transform_system(
             }
         }
     }
+
+    if ROTATE_CAMERA {
+        let mut ct = camera_query.single_mut();
+
+        ct.rotate(Quat::from_rotation_y(1.0 * time.delta_seconds()));
+    }
 }
 
 #[derive(Component)]
@@ -155,7 +162,7 @@ fn setup(
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn((
         Camera3dBundle {
-            transform: Transform::from_xyz(15.0, 40.0, 40.0).looking_at(Vec3::new(5.0, 0.0, 0.0), Vec3::Y),
+            transform: Transform::from_xyz(15.0, 40.0, 40.0).looking_at(Vec3::new(5.0, 10.0, 0.0), Vec3::Y),
             ..default()
         },
 
