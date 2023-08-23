@@ -1,3 +1,4 @@
+[ ] >> Server stuff. (Handle everything with an internal server, so no one can cheat!)
 [ ] >> Multi-threading with Rayon. (using .par_iter())
 [*] >> Perlin noise.
 [ ] >> Refactor noise.
