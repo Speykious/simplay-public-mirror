@@ -4,6 +4,7 @@ mod library;
 mod chunk;
 mod chunk_manager;
 mod perlin;
+mod server;
 
 use bevy::prelude::*;
 use bevy::input::ButtonState;
@@ -13,11 +14,8 @@ use bevy::render::render_resource::WgpuFeatures;
 use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy::window::PrimaryWindow;
-use world::Axis;
-use voxel::*;
-use chunk::*;
-use library::*;
 use chunk_manager::*;
+use server::*;
 
 const ROTATE: bool = false;
 const ROTATE_DETAILS: (bool, bool, bool) = (false, true, false);
@@ -51,6 +49,7 @@ fn main() {
         ), WireframePlugin))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .insert_resource(ChunkManager::new())
+        .insert_resource(InternalServer::new())
         .add_systems(Startup, spawn_camera)
         .add_systems(Startup, setup)
         .add_systems(Update, transform_system)
