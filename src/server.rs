@@ -9,9 +9,9 @@ pub enum SMError {
     IllegalChunkLoad,
     IllegalBlockBreak,
     IllegalHitPoint,
-    SubjectTriedToFly,
-    InvalidPlayer,
     IllegalItemOperation,
+    InvalidPlayer,
+    BannedPlayer,
 }
 
 #[derive(Debug, PartialEq)]
