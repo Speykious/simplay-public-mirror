@@ -21,7 +21,7 @@ const ROTATE: bool = false;
 const ROTATE_DETAILS: (bool, bool, bool) = (false, true, false);
 const MOVE: bool = false;
 const WIREFRAME: bool = true;
-const DEBUG_MOUSE_MOVE: bool = true;
+const DEBUG_MOUSE_MOVE: bool = false;
 const ROTATE_CAMERA: bool = true;
 
 fn test_code() {
