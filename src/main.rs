@@ -14,6 +14,7 @@ use bevy::render::render_resource::WgpuFeatures;
 use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy::window::PrimaryWindow;
+use bevy::log::LogPlugin;
 use chunk_manager::*;
 use server::*;
 
@@ -46,6 +47,11 @@ fn main() {
                     ..default()
                 }
             }
+        ).set(
+            LogPlugin {
+                filter: "info,wgpu_core=warn,wgpu_hal=off,rechannel=warn".into(),
+                level: bevy::log::Level::DEBUG,
+            },
         ), WireframePlugin))
         .insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .insert_resource(ChunkManager::new())
