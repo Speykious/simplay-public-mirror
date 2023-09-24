@@ -3,9 +3,6 @@ name = "simplay"
 version = "0.1.0"
 edition = "2021"
 
-[features]
-bdl = ["bevy/dynamic_linking"]
-
 [workspace]
 resolver = "2"
 
@@ -16,8 +13,7 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = "0.11.2"
+bevy = "0.11.0"
 bracket-noise = "0.8.7"
-hashbrown = "0.14.0"
 rand = "0.8.5"
 rayon = "1.7.0"

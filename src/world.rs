@@ -1,14 +1,7 @@
 #![allow(dead_code)]
 
-#[derive(Debug, PartialEq)]
-pub enum AxisCoord {
-    X,
-    Y,
-    Z,
-}
-
-#[derive(PartialEq, Debug, Clone, Copy, Hash, Eq)]
-pub enum Axis {
+#[derive(PartialEq, Eq)]
+pub enum Direction {
     North,
     South,
     East,
@@ -17,41 +10,8 @@ pub enum Axis {
     Down,
 }
 
-impl Axis {
-    pub fn vec_all() -> Vec<Axis> {
-        return vec![
-            Axis::North,
-            Axis::South,
-            Axis::East,
-            Axis::West,
-            Axis::Up,
-            Axis::Down,
-        ];
-    }
-
-    pub fn greedy_mesh_traverse_coords(&self) -> [AxisCoord; 2] {
-        return match self {
-            Self::North => [AxisCoord::X, AxisCoord::Y],
-            Self::South => [AxisCoord::X, AxisCoord::Y],
-            Self::East => [AxisCoord::Y, AxisCoord::Z],
-            Self::West => [AxisCoord::Y, AxisCoord::Z],
-            Self::Up => [AxisCoord::X, AxisCoord::Z],
-            Self::Down => [AxisCoord::X, AxisCoord::Z],
-        };
-    }
-
-    pub fn axis_direction(&self) -> AxisCoord {
-        return match self {
-            Self::North => AxisCoord::Z,
-            Self::South => AxisCoord::Z,
-            Self::East => AxisCoord::X,
-            Self::West => AxisCoord::X,
-            Self::Up => AxisCoord::Y,
-            Self::Down => AxisCoord::Y,
-        };
-    }
-
-    pub fn coord_offset(&self) -> (i8, i8, i8) {
+impl Direction {
+    pub fn offset(&self) -> (i8, i8, i8) {
         return match self {
             Self::North => (0, 0, -1),
             Self::South => (0, 0, 1),
@@ -62,11 +22,22 @@ impl Axis {
         };
     }
 
-    pub fn coord_offset_from(&self, x: i16, y: i16, z: i16) -> (i8, i8, i8) {
-        let ac = self.coord_offset();
-        let sc = (x, y, z);
-        let rc = (sc.0 as i8 + ac.0, sc.1 as i8 + ac.1, sc.2 as i8 + ac.2);
+    pub fn offset_with_position(&self, position: (isize, isize, isize)) -> (isize, isize, isize) {
+        let o = self.offset();
 
-        return rc;
+        let o = (o.0 as isize, o.1 as isize, o.2 as isize);
+
+        return (position.0 + o.0, position.1 + o.1, position.2 + o.2);
+    }
+
+    pub fn all() -> Vec<Self> {
+        return vec![
+            Self::North,
+            Self::South,
+            Self::East,
+            Self::West,
+            Self::Up,
+            Self::Down,
+        ];
     }
 }
