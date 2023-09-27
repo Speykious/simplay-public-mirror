@@ -65,6 +65,9 @@ impl Chunk {
             (mesh_data, indices) = mesher::optimize::share_vertices(&mesh_data, &indices);
         }
 
+        println!("MD L: {}", mesh_data.len());
+        println!("I L: {}", indices.len());
+
         return mesher::create_mesh(&mesh_data, &indices);
     }
 
