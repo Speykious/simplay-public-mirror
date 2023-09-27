@@ -17,7 +17,7 @@ use chunk::*;
 use block::*;
 
 // ==== DEBUG ====
-const WIREFRAME: bool = false;
+const WIREFRAME: bool = true;
 // ===============
 
 fn main() {
