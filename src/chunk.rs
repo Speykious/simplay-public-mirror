@@ -91,12 +91,10 @@ impl Chunk {
     }
 
     pub fn set_block(&mut self, position: (i8, i8, i8), blocktype: BlockType) {
-        // match blocktype {
-        //     BlockType::Air => self.blocks.remove(&position),
-        //     _ => self.blocks.insert(position, blocktype),
-        // };
-
-        self.blocks.insert(position, blocktype);
+        match blocktype {
+            BlockType::Air => self.blocks.remove(&position),
+            _ => self.blocks.insert(position, blocktype),
+        };
     }
 
     pub fn get_block(&self, position: (i8, i8, i8)) -> BlockType {
