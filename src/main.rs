@@ -3,6 +3,8 @@ mod block;
 mod voxel;
 mod world;
 mod mesher;
+mod random;
+mod noise;
 
 use bevy::prelude::*;
 use bevy::pbr::wireframe::*;
@@ -42,6 +44,7 @@ fn main() {
             }
         ), WireframePlugin))
         .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.3)))
+        .add_systems(Startup, setup)
         .add_systems(Startup, spawn_camera)
         .add_systems(Startup, spawn_random_shit)
         .run();
@@ -71,7 +74,7 @@ fn spawn_random_shit(
         }
     );
 
-    let chunk = Chunk::new((0, 0, 0));
+    let mut chunk = Chunk::new((0, 0, 0));
 
     chunk.set_block((0, 0, 0), BlockType::Debug);
     chunk.set_block((1, 0, 0), BlockType::Debug);
@@ -98,7 +101,7 @@ fn spawn_random_shit(
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn(
         Camera3dBundle {
-            transform: Transform::from_xyz(5.0, 5.0, 5.0)
+            transform: Transform::from_xyz(10.0, 10.0, 10.0)
                 .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         }

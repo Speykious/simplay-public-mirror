@@ -1,13 +1,8 @@
 #![allow(dead_code)]
 
-use bevy::prelude::*;
-use hashbrown::HashMap;
-
 use crate::block::*;
 use crate::world;
-use crate::mesher;
-use crate::mesher::MeshInfo;
-use crate::chunk;
+use crate::mesher::MeshData;
 
 pub struct Voxel {
     pub block: BlockType,
@@ -26,12 +21,12 @@ impl Voxel {
 
     pub fn enable_side(&mut self, direction: world::Direction) {
         if self.side_enabled(direction) == false {
-            self.sides.push(direction);
+            self.sides.push(direction.clone());
         }
     }
 
     pub fn disable_side(&mut self, direction: world::Direction) {
-        self.sides = self.sides.into_iter()
+        self.sides = self.sides.clone().into_iter()
             .filter(|x| *x != direction)
             .collect();
     }
@@ -55,35 +50,127 @@ impl Voxel {
             return false;
         }
     }
-}
 
-fn mesh_info_from_voxels(voxels: &Vec<Voxel>) -> Vec<mesher::MeshInfo> {
-    let mut mesh_info_map: HashMap<(u8, u8, u8), MeshInfo> = HashMap::new();
-
-    for voxel in voxels.iter() {
-        todo!();
+    pub fn get_sides(&self) -> Vec<world::Direction> {
+        return self.sides.clone();
     }
 
-    let mut mesh_info_vec: Vec<MeshInfo> = Vec::new();
-
-    for x in 0..chunk::CHUNK_SIZE.0 {
-        for y in 0..chunk::CHUNK_SIZE.1 {
-            for z in 0..chunk::CHUNK_SIZE.2 {
-                mesh_info_vec.push(match mesh_info_map.get(&(x, y, z)) {
-                    Some(s) => *s,
-                    None => {
-                        println!("Something went wrong inside of mesh_info_from_voxels()!");
-
-                        MeshInfo::trash() // Just returns trash values.
-                    },
-                });
-            }
+    pub fn get_side_as_mdi(&self, direction: world::Direction, size: (u8, u8, u8)) -> Option<(Vec<MeshData>, Vec<u32>)> {
+        if self.side_enabled(direction) == false {
+            return None;
         }
-    }
 
-    return mesh_info_vec;
+        let (min_x, min_y, min_z) = (-0.5 - (size.0 - 1) as f32, -0.5 - (size.1 - 1) as f32, -0.5 - (size.2 - 1) as f32);
+        let (max_x, max_y, max_z) = (0.5, 0.5, 0.5);
+
+        let indices = vec![0, 1, 2, 2, 3, 0];
+
+        let mut general: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
+
+        match direction {
+            world::Direction::North => {
+                for j in [
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [1.0, 0.]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [0., 0.]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [0., 1.0]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [1.0, 1.0]),
+                ] {
+                    general.push(j);
+                }
+            },
+            world::Direction::South => {
+                for j in [
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [0., 0.]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [1.0, 0.]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [1.0, 1.0]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [0., 1.0]),
+                ] {
+                    general.push(j);
+                }
+            },
+            world::Direction::East => {
+                for j in [
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [1.0, 0., 0.], [0., 0.]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [1.0, 0., 0.], [1.0, 0.]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [1.0, 0., 0.], [1.0, 1.0]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [1.0, 0., 0.], [0., 1.0]),
+                ] {
+                    general.push(j);
+                }
+            },
+            world::Direction::West => {
+                for j in [
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [-1.0, 0., 0.], [1.0, 0.]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [-1.0, 0., 0.], [0., 0.]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [-1.0, 0., 0.], [0., 1.0]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [-1.0, 0., 0.], [1.0, 1.0]),
+                ] {
+                    general.push(j);
+                }
+            },
+            world::Direction::Up => {
+                for j in [
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 1.0, 0.], [1.0, 0.]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 1.0, 0.], [0., 0.]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 1.0, 0.], [0., 1.0]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 1.0, 0.], [1.0, 1.0]),
+                ] {
+                    general.push(j);
+                }
+            },
+            world::Direction::Down => {
+                for j in [
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., -1.0, 0.], [0., 0.]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., -1.0, 0.], [1.0, 0.]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., -1.0, 0.], [1.0, 1.0]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., -1.0, 0.], [0., 1.0]),
+                ] {
+                    general.push(j);
+                }
+            },
+        };
+
+        let mesh_data: Vec<MeshData> = MeshData::array_from_general_array(&general);
+
+        return Some((mesh_data, indices));
+    }
 }
 
-pub fn mesh_from_voxels(voxels: &Vec<Voxel>) -> Mesh {
-    return mesher::create_mesh(&mesh_info_from_voxels(&voxels));
+// MDI = MeshData and Indices
+pub mod mdi_from {
+    use crate::mesher::{self, MeshData};
+    use crate::voxel::*;
+
+    pub fn voxel_array(voxels: &Vec<Voxel>) -> (Vec<MeshData>, Vec<u32>) {
+        let mut mesh_data: Vec<MeshData> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+    
+        for v in voxels.iter() {
+            let mdi = voxel(v);
+
+            mesh_data.extend(mdi.0);
+
+            indices = mesher::combine_indices(&vec![indices, mdi.1]);
+        }
+    
+        return (mesh_data, indices);
+    }
+
+    pub fn voxel(v: &Voxel) -> (Vec<MeshData>, Vec<u32>) {
+        let mut mesh_data: Vec<MeshData> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+
+        for s in v.get_sides() {
+            let mdi = match v.get_side_as_mdi(s, (1, 1, 1)) {
+                Some(s) => s,
+                None => continue, // If this is ever triggered, there is a bug.
+            };
+
+            mesh_data.extend(mdi.0);
+            
+            indices = mesher::combine_indices(&vec![indices, mdi.1]);
+        }
+
+        return (mesh_data, indices);
+    }
 }

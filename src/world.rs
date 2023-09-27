@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 pub enum Direction {
     North,
     South,

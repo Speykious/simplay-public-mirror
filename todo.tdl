@@ -1,0 +1,4 @@
+[ ] >> Add real code for vertex sharing optimization.
+[ ] >> Greedy meshing.
+[ ] >> Cull neighboring chunk faces.
+[ ] >> Multi-threading with Rayon.
