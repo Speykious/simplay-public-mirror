@@ -23,3 +23,7 @@ pub fn boolean() -> bool {
         std::process::exit(1);
     }
 }
+
+pub fn choice<T: Copy>(choices: &Vec<T>) -> T {
+    return choices[rand::thread_rng().gen_range(0..choices.len())];
+}

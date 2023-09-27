@@ -17,7 +17,7 @@ use chunk::*;
 use block::*;
 
 // ==== DEBUG ====
-const WIREFRAME: bool = true;
+const WIREFRAME: bool = false;
 // ===============
 
 fn main() {
@@ -64,22 +64,25 @@ fn spawn_random_shit(
     cmds.spawn(
         PointLightBundle {
             point_light: PointLight {
-                intensity: 5000.0,
+                intensity: 95000.0,
                 shadows_enabled: true,
                 range: 500.0,
                 ..default()
             },
-            transform: Transform::from_xyz(6.0, 4.0, 5.0),
+            transform: Transform::from_xyz(26.0, 24.0, 25.0),
             ..default()
         }
     );
 
     let mut chunk = Chunk::new((0, 0, 0));
 
-    chunk.set_block((0, 0, 0), BlockType::Debug);
-    chunk.set_block((1, 0, 0), BlockType::Debug);
-    chunk.set_block((0, 0, 1), BlockType::Debug);
-    chunk.set_block((0, 1, 0), BlockType::Debug);
+    for x in 0..CHUNK_SIZE.0 {
+        for y in 0..CHUNK_SIZE.1 {
+            for z in 0..CHUNK_SIZE.2 {
+                chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Debug, BlockType::Air]));
+            }
+        }
+    }
 
     let chunk_mesh = chunk.mesh();
 
@@ -101,7 +104,7 @@ fn spawn_random_shit(
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn(
         Camera3dBundle {
-            transform: Transform::from_xyz(10.0, 10.0, 10.0)
+            transform: Transform::from_xyz(30.0, 30.0, 30.0)
                 .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         }

@@ -13,7 +13,7 @@ const GREEDY_MESHING: bool = false;
 const SHARE_VERTICES: bool = false;
 // ===============
 
-pub const CHUNK_SIZE: (u8, u8, u8) = (4, 4, 4);
+pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 
 pub struct Chunk {
     blocks: HashMap<(i8, i8, i8), BlockType>, // The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
@@ -81,6 +81,10 @@ impl Chunk {
         } else {
             return false;
         }
+    }
+
+    pub fn set_block_u8(&mut self, position: (u8, u8, u8), blocktype: BlockType) {
+        self.set_block((position.0 as i8, position.1 as i8, position.2 as i8), blocktype);
     }
 
     pub fn set_block(&mut self, position: (i8, i8, i8), blocktype: BlockType) {
