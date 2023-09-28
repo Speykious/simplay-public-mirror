@@ -10,7 +10,6 @@ use crate::mesher;
 
 // ==== DEBUG ====
 const GREEDY_MESHING: bool = false;
-const SHARE_VERTICES: bool = true;
 // ===============
 
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
@@ -61,12 +60,7 @@ impl Chunk {
 
         let (mut mesh_data, mut indices) = mdi_from::voxel_array(&voxels);
 
-        if SHARE_VERTICES {
-            (mesh_data, indices) = mesher::optimize::share_vertices(&mesh_data, &indices);
-        }
-
-        println!("MD L: {}", mesh_data.len());
-        println!("I L: {}", indices.len());
+        (mesh_data, indices) = mesher::optimize::share_vertices(&mesh_data, &indices);
 
         return mesher::create_mesh(&mesh_data, &indices);
     }
