@@ -10,7 +10,7 @@ use crate::mesher;
 
 // ==== DEBUG ====
 const GREEDY_MESHING: bool = false;
-const SHARE_VERTICES: bool = false;
+const SHARE_VERTICES: bool = true;
 // ===============
 
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);

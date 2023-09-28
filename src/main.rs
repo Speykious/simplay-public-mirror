@@ -79,7 +79,7 @@ fn spawn_random_shit(
     for x in 0..CHUNK_SIZE.0 {
         for y in 0..CHUNK_SIZE.1 {
             for z in 0..CHUNK_SIZE.2 {
-                chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Debug, BlockType::Air]));
+                chunk.set_block_u8((x, y, z), BlockType::Debug);
             }
         }
     }

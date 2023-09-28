@@ -5,15 +5,37 @@ use bevy::render::mesh::Indices;
 use bevy::render::mesh::PrimitiveTopology;
 
 pub mod optimize {
-    use crate::mesher::MeshData;
+    use hashbrown::*;
+    use crate::mesher::{MeshData, MeshDataHashable};
 
     pub fn share_vertices(mesh_data: &Vec<MeshData>, indices: &Vec<u32>) -> (Vec<MeshData>, Vec<u32>) {
-        return (mesh_data.clone(), indices.clone()); // todo
+        let mesh_data_hashable: Vec<MeshDataHashable> = mesh_data.iter().map(|x| x.to_hashable()).collect();
+
+        let mut new_mesh_data: Vec<MeshData> = Vec::new();
+        let mut new_indices: Vec<u32> = Vec::new();
+        
+        let mut mapping: HashMap<MeshDataHashable, u32> = HashMap::new();
+
+        for i in indices.iter() {
+            let mdh = mesh_data_hashable[*i as usize];
+
+            if mapping.contains_key(&mdh) == false {
+                new_mesh_data.push(mdh.to_mesh_data());
+                new_indices.push((new_mesh_data.len() - 1) as u32);
+                mapping.insert(mdh, (new_mesh_data.len() - 1) as u32);
+            }
+
+            else {
+                new_indices.push(*mapping.get(&mdh).unwrap());
+            }
+        }
+
+        return (new_mesh_data, new_indices);
     }
 }
 
 // This is just a cleaner way of representing vertices, normals, and uvs all in one object.
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct MeshData {
     vertex: [f32; 3],
     normal: [f32; 3],
@@ -49,6 +71,64 @@ impl MeshData {
         }
 
         return self_vec;
+    }
+
+    pub fn to_hashable(&self) -> MeshDataHashable {
+        let sv = self.vertex;
+        let sn = self.normal;
+        let su = self.uv;
+        
+        return MeshDataHashable {
+            vertex: (MeshDataF32Hashable::new(sv[0]), MeshDataF32Hashable::new(sv[1]), MeshDataF32Hashable::new(sv[2])),
+            normal: (MeshDataF32Hashable::new(sn[0]), MeshDataF32Hashable::new(sn[1]), MeshDataF32Hashable::new(sn[2])),
+            uv: (MeshDataF32Hashable::new(su[0]), MeshDataF32Hashable::new(su[1]))
+        };
+    }
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+pub struct MeshDataHashable {
+    vertex: (MeshDataF32Hashable, MeshDataF32Hashable, MeshDataF32Hashable),
+    normal: (MeshDataF32Hashable, MeshDataF32Hashable, MeshDataF32Hashable),
+    uv: (MeshDataF32Hashable, MeshDataF32Hashable),
+}
+
+#[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
+struct MeshDataF32Hashable {
+    value: (i32, i32),
+}
+
+impl MeshDataF32Hashable {
+    pub fn new(v: f32) -> Self {
+        let mut tnum: Vec<i32> = Vec::new();
+
+        for i in v.to_string().trim().split(".") {
+            let int: i32 = i.parse().unwrap();
+            
+            tnum.push(int);
+        }
+
+        if tnum.len() == 1 {
+            tnum.push(0);
+        }
+
+        return Self {
+            value: (tnum[0], tnum[1]),
+        };
+    }
+
+    pub fn to_f32(&self) -> f32 {
+        return format!("{}.{}", self.value.0, self.value.1).trim().parse().unwrap();
+    }
+}
+
+impl MeshDataHashable {
+    pub fn to_mesh_data(&self) -> MeshData {
+        let sv = self.vertex;
+        let sn = self.normal;
+        let su = self.uv;
+        
+        return MeshData::new([sv.0.to_f32(), sv.1.to_f32(), sv.2.to_f32()], [sn.0.to_f32(), sn.1.to_f32(), sn.2.to_f32()], [su.0.to_f32(), su.1.to_f32()]);
     }
 }
 
