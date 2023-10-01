@@ -64,12 +64,12 @@ fn spawn_random_shit(
     cmds.spawn(
         PointLightBundle {
             point_light: PointLight {
-                intensity: 95000.0,
+                intensity: 99000.0,
                 shadows_enabled: true,
-                range: 500.0,
+                range: 5000.0,
                 ..default()
             },
-            transform: Transform::from_xyz(66.0, 64.0, 65.0),
+            transform: Transform::from_xyz(46.0, 44.0, 45.0),
             ..default()
         }
     );
@@ -104,7 +104,7 @@ fn spawn_random_shit(
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn(
         Camera3dBundle {
-            transform: Transform::from_xyz(60.0, 60.0, 60.0)
+            transform: Transform::from_xyz(55.0, 55.0, 55.0)
                 .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         }
