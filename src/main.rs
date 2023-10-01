@@ -104,7 +104,7 @@ fn spawn_random_shit(
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn(
         Camera3dBundle {
-            transform: Transform::from_xyz(30.0, 30.0, 30.0)
+            transform: Transform::from_xyz(40.0, 40.0, 40.0)
                 .looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
             ..default()
         }
