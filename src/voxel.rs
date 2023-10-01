@@ -70,9 +70,9 @@ impl Voxel {
         match direction {
             world::Direction::North => {
                 for j in [
-                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [1.0, 0.]),
-                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [0., 0.]),
-                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [0., 1.0]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [1.0, 0.0]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [0.0, 0.0]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [0.0, 1.0]),
                     ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [0., 0., -1.0], [1.0, 1.0]),
                 ] {
                     general.push(j);
@@ -80,30 +80,30 @@ impl Voxel {
             },
             world::Direction::South => {
                 for j in [
-                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [0., 0.]),
-                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [1.0, 0.]),
-                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [1.0, 1.0]),
-                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [0., 1.0]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [1.0, 1.0]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [0.0, 1.0]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [0.0, 0.0]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [0., 0., 1.0], [1.0, 0.0]),
                 ] {
                     general.push(j);
                 }
             },
             world::Direction::East => {
                 for j in [
-                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [1.0, 0., 0.], [0., 0.]),
-                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [1.0, 0., 0.], [1.0, 0.]),
-                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [1.0, 0., 0.], [1.0, 1.0]),
-                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [1.0, 0., 0.], [0., 1.0]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [1.0, 0., 0.], [0.0, 1.0]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [1.0, 0., 0.], [0.0, 0.0]),
+                    ([max_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [1.0, 0., 0.], [1.0, 0.0]),
+                    ([max_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [1.0, 0., 0.], [1.0, 1.0]),
                 ] {
                     general.push(j);
                 }
             },
             world::Direction::West => {
                 for j in [
-                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [-1.0, 0., 0.], [1.0, 0.]),
-                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [-1.0, 0., 0.], [0., 0.]),
-                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [-1.0, 0., 0.], [0., 1.0]),
-                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [-1.0, 0., 0.], [1.0, 1.0]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, max_z + self.position.2 as f32], [-1.0, 0., 0.], [1.0, 1.0]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, max_z + self.position.2 as f32], [-1.0, 0., 0.], [1.0, 0.0]),
+                    ([min_x + self.position.0 as f32, max_y + self.position.1 as f32, min_z + self.position.2 as f32], [-1.0, 0., 0.], [0.0, 0.0]),
+                    ([min_x + self.position.0 as f32, min_y + self.position.1 as f32, min_z + self.position.2 as f32], [-1.0, 0., 0.], [0.0, 1.0]),
                 ] {
                     general.push(j);
                 }
