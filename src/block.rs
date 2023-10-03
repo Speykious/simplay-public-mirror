@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 // Blocks for the game.
-#[derive(PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum BlockType {
     Air, // Fun fact: the air block never exists in the chunk block array. It is basically an empty block.
     Debug,

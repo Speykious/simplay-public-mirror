@@ -163,11 +163,11 @@ pub mod mdi_from {
         for s in v.get_sides() {
             let mdi = match v.get_side_as_mdi(s, (1, 1, 1)) {
                 Some(s) => s,
-                None => continue, // If this is ever triggered, there is a bug.
+                None => panic!("Oh shoot! I couldn't get a face for: {:?} (File this as a bug report!)", s), // If this is ever triggered, there is a bug.
             };
 
             mesh_data.extend(mdi.0);
-            
+
             indices = mesher::combine_indices(&vec![indices, mdi.1]);
         }
 

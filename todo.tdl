@@ -1,4 +1,5 @@
+[ ] >> Fix vertex sharing code! (Hint: causes weird rendering issues on blocks with a 0 in their position.)
 [*] >> Add real code for vertex sharing optimization.
-[ ] >> Greedy meshing.
 [ ] >> Cull neighboring chunk faces.
 [ ] >> Multi-threading with Rayon.
+[ ] >> Greedy meshing? (Is this really needed?)

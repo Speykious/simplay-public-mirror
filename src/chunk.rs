@@ -12,7 +12,7 @@ use crate::mesher;
 const GREEDY_MESHING: bool = false;
 // ===============
 
-pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
+pub const CHUNK_SIZE: (u8, u8, u8) = (4, 4, 4);
 
 pub struct Chunk {
     blocks: HashMap<(i8, i8, i8), BlockType>, // The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
@@ -53,6 +53,8 @@ impl Chunk {
                         }
                     }
 
+                    // voxel_data.enable_sides(&world::Direction::all()); // debug
+
                     voxels.push(voxel_data);
                 }
             }
@@ -60,7 +62,7 @@ impl Chunk {
 
         let (mut mesh_data, mut indices) = mdi_from::voxel_array(&voxels);
 
-        (mesh_data, indices) = mesher::optimize::share_vertices(&mesh_data, &indices);
+        // (mesh_data, indices) = mesher::optimize::share_vertices(&mesh_data, &indices);
 
         return mesher::create_mesh(&mesh_data, &indices);
     }
@@ -96,5 +98,19 @@ impl Chunk {
             Some(s) => *s,
             None => BlockType::Air,
         };
+    }
+
+    // Is a position outside of a chunk?
+    pub fn position_overflow(position: (i8, i8, i8)) -> bool {
+        let xyz_array = [position.0, position.1, position.2];
+        let chunk_size_array = [CHUNK_SIZE.0 as i8, CHUNK_SIZE.1 as i8, CHUNK_SIZE.2 as i8];
+
+        for i in 0..3 {
+            if xyz_array[i] < 0 || xyz_array[i] > chunk_size_array[i] {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
