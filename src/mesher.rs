@@ -31,8 +31,6 @@ pub mod optimize {
             }
         }
 
-        println!("MAPPING LEN: {}", mapping.len());
-
         return (new_mesh_data, new_indices);
     }
 }
