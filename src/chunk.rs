@@ -53,16 +53,12 @@ impl Chunk {
                         }
                     }
 
-                    // voxel_data.enable_sides(&world::Direction::all()); // debug
-
                     voxels.push(voxel_data);
                 }
             }
         }
 
-        let (mut mesh_data, mut indices) = mdi_from::voxel_array(&voxels);
-
-        // (mesh_data, indices) = mesher::optimize::share_vertices(&mesh_data, &indices);
+        let (mesh_data, indices) = mdi_from::voxel_array(&voxels);
 
         return mesher::create_mesh(&mesh_data, &indices);
     }

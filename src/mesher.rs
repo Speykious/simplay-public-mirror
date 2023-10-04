@@ -8,6 +8,7 @@ pub mod optimize {
     use hashbrown::*;
     use crate::mesher::{MeshData, MeshDataHashable};
 
+    // This seems to just be a useless function. (Shit! That is around 8 hours wasted!)
     pub fn share_vertices(mesh_data: &Vec<MeshData>, indices: &Vec<u32>) -> (Vec<MeshData>, Vec<u32>) {
         let mesh_data_hashable: Vec<MeshDataHashable> = mesh_data.iter().map(|x| x.to_hashable()).collect();
 
@@ -29,6 +30,8 @@ pub mod optimize {
                 new_indices.push(*mapping.get(&mdh).unwrap());
             }
         }
+
+        println!("MAPPING LEN: {}", mapping.len());
 
         return (new_mesh_data, new_indices);
     }
@@ -93,14 +96,28 @@ pub struct MeshDataHashable {
     uv: (MeshDataF32Hashable, MeshDataF32Hashable),
 }
 
+impl MeshDataHashable {
+    pub fn to_mesh_data(&self) -> MeshData {
+        let sv = self.vertex;
+        let sn = self.normal;
+        let su = self.uv;
+        
+        return MeshData::new([sv.0.to_f32(), sv.1.to_f32(), sv.2.to_f32()], [sn.0.to_f32(), sn.1.to_f32(), sn.2.to_f32()], [su.0.to_f32(), su.1.to_f32()]);
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy, Hash)]
 struct MeshDataF32Hashable {
     value: (i32, i32),
+    is_negative: bool, // For whatever reason, .parse() does not support parsing negative numbers! ( assert!("-2".parse().unwrap() == 2); )
 }
 
 impl MeshDataF32Hashable {
     pub fn new(v: f32) -> Self {
         let mut tnum: Vec<i32> = Vec::new();
+
+        // This is for fixing an issue where the "-" sign is lost on numbers starting with -0.x.
+        let is_negative_0_starting = v.to_string().starts_with("-0");
 
         for i in v.to_string().trim().split(".") {
             let int: i32 = i.parse().unwrap();
@@ -114,21 +131,18 @@ impl MeshDataF32Hashable {
 
         return Self {
             value: (tnum[0], tnum[1]),
+            is_negative: is_negative_0_starting,
         };
     }
 
     pub fn to_f32(&self) -> f32 {
-        return format!("{}.{}", self.value.0, self.value.1).trim().parse().unwrap();
-    }
-}
+        let mut return_value: f32 = format!("{}.{}", self.value.0, self.value.1).trim().parse().unwrap();
 
-impl MeshDataHashable {
-    pub fn to_mesh_data(&self) -> MeshData {
-        let sv = self.vertex;
-        let sn = self.normal;
-        let su = self.uv;
-        
-        return MeshData::new([sv.0.to_f32(), sv.1.to_f32(), sv.2.to_f32()], [sn.0.to_f32(), sn.1.to_f32(), sn.2.to_f32()], [su.0.to_f32(), su.1.to_f32()]);
+        if self.is_negative {
+            return_value = -return_value;
+        }
+
+        return return_value;
     }
 }
 
