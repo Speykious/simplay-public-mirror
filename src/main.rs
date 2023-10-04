@@ -5,6 +5,7 @@ mod world;
 mod mesher;
 mod random;
 mod noise;
+mod filesystem;
 
 use bevy::prelude::*;
 use bevy::pbr::wireframe::*;
