@@ -69,8 +69,8 @@ fn app() -> ExitCode {
             }
         ).set(
             LogPlugin {
-                filter: "info,wgpu_core=warn,wgpu_hal=off,rechannel=warn".into(),
-                level: bevy::log::Level::DEBUG,
+                filter: "wgpu_core=warn,wgpu_hal=off,rechannel=warn".into(),
+                level: bevy::log::Level::WARN,
             }
         ).set(
             ImagePlugin::default_nearest()
