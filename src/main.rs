@@ -10,6 +10,7 @@ mod asset_manager;
 mod dir;
 mod places;
 mod log;
+mod cli;
 
 use std::env;
 use bevy::prelude::*;
@@ -18,6 +19,7 @@ use bevy::render::render_resource::WgpuFeatures;
 use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
 use bevy::log::LogPlugin;
+use clap::Parser;
 
 use chunk::*;
 use block::*;
@@ -39,6 +41,8 @@ fn main() {
 }
 
 fn app() -> ExitCode {
+    let args = cli::Cli::parse();
+
     env::set_var("BEVY_ASSET_ROOT", places::assets().to_string());
 
     match places::create_all_dirs() {
@@ -70,7 +74,7 @@ fn app() -> ExitCode {
         ).set(
             LogPlugin {
                 filter: "wgpu_core=warn,wgpu_hal=off,rechannel=warn".into(),
-                level: bevy::log::Level::WARN,
+                level: args.bevy_log_level.unwrap_or(bevy::log::Level::WARN),
             }
         ).set(
             ImagePlugin::default_nearest()
