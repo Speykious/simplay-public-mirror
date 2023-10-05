@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+#[derive(PartialEq, Eq, Clone)]
 pub struct Path {
     path: String,
 }

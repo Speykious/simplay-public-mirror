@@ -6,6 +6,10 @@ mod mesher;
 mod random;
 mod noise;
 mod filesystem;
+mod asset_packer;
+mod dir;
+mod places;
+mod log;
 
 use bevy::prelude::*;
 use bevy::pbr::wireframe::*;
@@ -16,6 +20,8 @@ use bevy::log::LogPlugin;
 
 use chunk::*;
 use block::*;
+use places::PlacesPlugin;
+use asset_packer::AssetPackerPlugin;
 
 // ==== DEBUG ====
 const WIREFRAME: bool = true;
@@ -46,6 +52,8 @@ fn main() {
         ).set(
             ImagePlugin::default_nearest()
         ), WireframePlugin))
+        .add_plugins(PlacesPlugin)
+        .add_plugins(AssetPackerPlugin)
         .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.3)))
         .add_systems(Startup, setup)
         .add_systems(Startup, spawn_camera)
