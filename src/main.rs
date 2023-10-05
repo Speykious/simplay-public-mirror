@@ -6,11 +6,14 @@ mod mesher;
 mod random;
 mod noise;
 mod filesystem;
-mod asset_packer;
+mod asset_manager;
 mod dir;
 mod places;
 mod log;
 
+use std::env;
+use std::io;
+use std::io::ErrorKind;
 use bevy::prelude::*;
 use bevy::pbr::wireframe::*;
 use bevy::render::render_resource::WgpuFeatures;
@@ -20,14 +23,36 @@ use bevy::log::LogPlugin;
 
 use chunk::*;
 use block::*;
-use places::PlacesPlugin;
-use asset_packer::AssetPackerPlugin;
 
 // ==== DEBUG ====
 const WIREFRAME: bool = true;
 // ===============
 
+#[derive(PartialEq, Eq)]
+enum ExitCode {
+    Success,
+    Fail,
+}
+
 fn main() {
+    if app() == ExitCode::Fail {
+        std::process::exit(1);
+    }
+}
+
+fn app() -> ExitCode {
+    env::set_var("BEVY_ASSET_ROOT", places::assets().to_string());
+
+    match places::create_all_dirs() {
+        Ok(_) => (),
+        Err(_) => return ExitCode::Fail,
+    };
+
+    match asset_manager::build_assets_if_needed() {
+        Ok(_) => (),
+        Err(_) => return ExitCode::Fail,
+    };
+
     App::new()
         .add_plugins((DefaultPlugins.set(
             WindowPlugin {
@@ -52,13 +77,13 @@ fn main() {
         ).set(
             ImagePlugin::default_nearest()
         ), WireframePlugin))
-        .add_plugins(PlacesPlugin)
-        .add_plugins(AssetPackerPlugin)
         .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.3)))
         .add_systems(Startup, setup)
         .add_systems(Startup, spawn_camera)
         .add_systems(Startup, spawn_random_shit)
         .run();
+
+    return ExitCode::Success;
 }
 
 fn setup(

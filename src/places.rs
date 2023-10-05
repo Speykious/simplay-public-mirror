@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use bevy::prelude::{Plugin, App, Startup};
+use std::io;
 use crate::dir;
 use crate::filesystem::*;
 use crate::log::*;
@@ -26,7 +26,7 @@ pub fn assets() -> Path {
     return_path!("assets", cache().to_string());
 }
 
-pub fn setup_all_dirs_system() {
+pub fn create_all_dirs() -> Result<(), io::Error> {
     let directories = vec![
         base(),
         cache(),
@@ -39,20 +39,15 @@ pub fn setup_all_dirs_system() {
         if i.exists() == false {
             match directory::create(i.clone()) {
                 Ok(_) => {
-                    info!("Created directory: {}", i.to_string());
+                    generic!("Created directory: {}", i.to_string());
                 },
-                Err(_) => {
+                Err(e) => {
                     error!("Failed to create directory: {}", i.to_string());
+                    return Err(e);
                 },
             };
         }
     }
-}
 
-pub struct PlacesPlugin;
-
-impl Plugin for PlacesPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup_all_dirs_system);
-    }
+    return Ok(());
 }

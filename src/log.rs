@@ -83,3 +83,7 @@ pub(crate) use error;
 pub(crate) use warning;
 pub(crate) use note;
 pub(crate) use debug;
+
+pub mod macro_deps {
+    pub use super::{LogMode, log_generic_print, log_core_print};
+}
