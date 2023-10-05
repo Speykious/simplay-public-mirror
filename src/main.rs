@@ -12,8 +12,6 @@ mod places;
 mod log;
 
 use std::env;
-use std::io;
-use std::io::ErrorKind;
 use bevy::prelude::*;
 use bevy::pbr::wireframe::*;
 use bevy::render::render_resource::WgpuFeatures;
