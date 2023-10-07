@@ -11,6 +11,7 @@ mod dir;
 mod places;
 mod log;
 mod cli;
+mod hash;
 
 use std::env;
 use bevy::prelude::*;

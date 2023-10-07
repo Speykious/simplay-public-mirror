@@ -26,11 +26,16 @@ pub fn assets() -> Path {
     return_path!("assets", cache().to_string());
 }
 
+pub fn built_asset_packs() -> Path {
+    return_path!("asset_packs", cache().to_string());
+}
+
 pub fn create_all_dirs() -> Result<(), io::Error> {
     let directories = vec![
         base(),
         cache(),
         assets(),
+        built_asset_packs(),
     ];
 
     info!("Setting up directories...");
