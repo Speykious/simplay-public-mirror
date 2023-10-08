@@ -74,7 +74,7 @@ fn app() -> ExitCode {
             }
         ).set(
             LogPlugin {
-                filter: "wgpu_core=warn,wgpu_hal=off,rechannel=warn".into(),
+                filter: "wgpu_core=error,wgpu_hal=off,rechannel=warn".into(),
                 level: args.bevy_log_level.unwrap_or(bevy::log::Level::WARN),
             }
         ).set(
