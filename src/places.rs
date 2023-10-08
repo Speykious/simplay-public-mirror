@@ -19,23 +19,24 @@ pub fn base() -> Path {
 }
 
 pub fn cache() -> Path {
-    return_path!(".simplay_cache", dir::cache().to_string());
+    return_path!("simplay", dir::cache().to_string());
 }
 
 pub fn assets() -> Path {
     return_path!("assets", cache().to_string());
 }
 
-pub fn built_asset_packs() -> Path {
-    return_path!("asset_packs", cache().to_string());
+pub fn asset_packs() -> Path {
+    return_path!("asset_packs", base().to_string());
 }
 
 pub fn create_all_dirs() -> Result<(), io::Error> {
     let directories = vec![
         base(),
+        asset_packs(),
+
         cache(),
         assets(),
-        built_asset_packs(),
     ];
 
     info!("Setting up directories...");

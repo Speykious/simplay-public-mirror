@@ -1,14 +1,28 @@
 #![allow(dead_code)]
 
 use std::io;
+use clap::Parser;
 use crate::places;
 use crate::log;
 use crate::log::macro_deps::*;
 use crate::filesystem::*;
 use crate::hash;
+use crate::cli;
 
-/// Read all the resource packs, then build the game's assets from the data.
+// Build all the user's asset packs into one singular asset pack.
+fn build_unified_asset_pack() -> Result<(), io::Error> {
+    return Ok(()); // todo
+}
+
+/// Read all the built asset packs, then build the game's assets from the data.
 pub fn build_assets() -> Result<(), io::Error> {
+    log::info!("Building unified asset pack...");
+
+    match build_unified_asset_pack() {
+        Ok(_) => (),
+        Err(e) => return Err(e),
+    };
+
     log::info!("Building game assets...");
 
     // TODO: Block Atlas Generation
@@ -45,6 +59,12 @@ pub fn build_assets_if_needed() -> Result<(), io::Error> {
 
 /// Checks to see whether the builded assets are outdated, and need to be built again.
 pub fn is_build_needed() -> bool {
+    let args = cli::Cli::parse();
+
+    if args.rebuild_assets {
+        return true;
+    }
+
     if checksum_file().exists() == false {
         return true;
     }
@@ -70,28 +90,32 @@ fn cache_checksum() -> Result<String, io::Error> {
 }
 
 fn asset_packs_checksum() -> Result<String, io::Error> {
-    let packs = match directory::list_items(places::built_asset_packs()) {
+    let files = match directory::list_items_recursive(places::asset_packs()) {
         Ok(o) => o,
         Err(e) => return Err(e),
     };
 
-    let mut packs_checksum_vec: Vec<String> = Vec::new();
+    let files: Vec<Path> = files.into_iter()
+        .filter(|x| x.path_type() == PathType::File)
+        .collect();
 
-    for i in packs.iter() {
-        packs_checksum_vec.push(match hash::file(i.clone()) {
+    let mut files_checksum_vec: Vec<String> = Vec::new();
+
+    for i in files.iter() {
+        files_checksum_vec.push(match hash::file(i.clone()) {
             Ok(o) => o,
             Err(e) => return Err(e),
         });
     }
 
-    packs_checksum_vec.sort();
+    files_checksum_vec.sort();
 
-    let mut packs_checksum = String::new();
+    let mut files_checksum = String::new();
 
-    for i in packs_checksum_vec.iter() {
-        packs_checksum.push_str(i);
-        packs_checksum.push_str(" ");
+    for i in files_checksum_vec.iter() {
+        files_checksum.push_str(i);
+        files_checksum.push_str(" ");
     }
 
-    return Ok(packs_checksum.trim().to_string());
+    return Ok(files_checksum.trim().to_string());
 }
