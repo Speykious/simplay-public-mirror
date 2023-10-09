@@ -29,6 +29,17 @@ use block::*;
 const WIREFRAME: bool = true;
 // ===============
 
+macro_rules! run_exit_code_function {
+    (
+        $function: expr
+    ) => {
+        match $function {
+            Ok(_) => (),
+            Err(_) => return ExitCode::Fail,
+        };
+    }
+}
+
 #[derive(PartialEq, Eq)]
 enum ExitCode {
     Success,
@@ -46,15 +57,9 @@ fn app() -> ExitCode {
 
     env::set_var("BEVY_ASSET_ROOT", places::assets().to_string());
 
-    match places::create_all_dirs() {
-        Ok(_) => (),
-        Err(_) => return ExitCode::Fail,
-    };
-
-    match asset_manager::build_assets_if_needed() {
-        Ok(_) => (),
-        Err(_) => return ExitCode::Fail,
-    };
+    run_exit_code_function!(places::create_all_dirs());
+    run_exit_code_function!(asset_manager::refresh_asset_packs());
+    run_exit_code_function!(asset_manager::build_assets_if_needed());
 
     App::new()
         .add_plugins((DefaultPlugins.set(

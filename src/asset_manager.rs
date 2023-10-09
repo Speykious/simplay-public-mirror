@@ -89,7 +89,17 @@ fn cache_checksum() -> Result<String, io::Error> {
     };
 }
 
+fn asset_packs_checksum_file() -> Path {
+    return Path::new(format!("{}/asset_packs_checksum", places::assets().to_string()).as_str());
+}
+
 fn asset_packs_checksum() -> Result<String, io::Error> {
+    if asset_packs_checksum_file().exists() {
+        let sum = file::read(asset_packs_checksum_file())?;
+
+        return Ok(sum.trim().to_string());
+    }
+
     log::info!("Getting all asset pack file checksums, this may take a while...");
 
     let files = match directory::list_items_recursive(places::asset_packs()) {
@@ -119,5 +129,16 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
         files_checksum.push_str(" ");
     }
 
+    file::write(files_checksum.trim(), asset_packs_checksum_file())?;
+
     return Ok(files_checksum.trim().to_string());
+}
+
+/// Remove the old asset pack cache checksum file. (Do this if the asset packs were changed.)
+pub fn refresh_asset_packs() -> Result<(), io::Error> {
+    if asset_packs_checksum_file().exists() {
+        fs_action::delete(asset_packs_checksum_file())?;
+    }
+
+    return Ok(());
 }
