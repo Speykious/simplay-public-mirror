@@ -135,7 +135,7 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
 }
 
 /// Remove the old asset pack cache checksum file. (Do this if the asset packs were changed.)
-pub fn refresh_asset_packs() -> Result<(), io::Error> {
+pub fn refresh_asset_packs_checksum() -> Result<(), io::Error> {
     if asset_packs_checksum_file().exists() {
         fs_action::delete(asset_packs_checksum_file())?;
     }
