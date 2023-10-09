@@ -10,15 +10,15 @@ use crate::hash;
 use crate::cli;
 
 // Build all the user's asset packs into one singular asset pack.
-fn build_unified_asset_pack() -> Result<(), io::Error> {
-    return Ok(()); // todo
+fn build_unified_asset_links() -> Result<(), io::Error> {
+    return Ok(());
 }
 
 /// Read all the built asset packs, then build the game's assets from the data.
 pub fn build_assets() -> Result<(), io::Error> {
-    log::info!("Building unified asset pack...");
+    log::info!("Building unified asset links...");
 
-    match build_unified_asset_pack() {
+    match build_unified_asset_links() {
         Ok(_) => (),
         Err(e) => return Err(e),
     };
@@ -90,6 +90,8 @@ fn cache_checksum() -> Result<String, io::Error> {
 }
 
 fn asset_packs_checksum() -> Result<String, io::Error> {
+    log::info!("Getting all asset pack file checksums, this may take a while...");
+
     let files = match directory::list_items_recursive(places::asset_packs()) {
         Ok(o) => o,
         Err(e) => return Err(e),
