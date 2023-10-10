@@ -3,13 +3,17 @@
 #![allow(unused_macros)]
 
 use colored::{Colorize, ColoredString};
+use clap::Parser;
+use crate::cli;
 
+#[derive(PartialEq, Eq)]
 pub enum LogMode {
     Info,
     Error,
     Warning,
     Note,
     Debug,
+    Todo,
 }
 
 macro_rules! generic {
@@ -48,17 +52,30 @@ macro_rules! debug {
     });
 }
 
+macro_rules! task {
+    ($($arg:tt)*) => ({
+        log_core_print(format!($($arg)*), LogMode::Todo);
+    });
+}
+
 pub fn log_generic_print(msg: String) {
     println!("{} {}", " :".black().bold(), msg);
 }
 
 pub fn log_core_print(msg: String, mode: LogMode) {
+    let args = cli::Cli::parse();
+
+    if args.debug == false && mode == LogMode::Debug {
+        return;
+    }
+
     let prefix_text: &str = match mode {
         LogMode::Info => "Info",
         LogMode::Error => "Error",
         LogMode::Warning => "Warning",
         LogMode::Note => "Note",
         LogMode::Debug => "Debug",
+        LogMode::Todo => "TODO",
     };
 
     let prefix = apply_color(prefix_text.to_string(), &mode);
@@ -73,6 +90,7 @@ fn apply_color(string: String, mode: &LogMode) -> String {
         LogMode::Warning => string.bright_yellow(),
         LogMode::Note => string.bright_yellow(),
         LogMode::Debug => string.bright_magenta(),
+        LogMode::Todo => string.bright_cyan(),
     };
 
     return colored_string.to_string();
@@ -84,6 +102,7 @@ pub(crate) use error;
 pub(crate) use warning;
 pub(crate) use note;
 pub(crate) use debug;
+pub(crate) use task;
 
 pub mod macro_deps {
     pub use super::{LogMode, log_generic_print, log_core_print};

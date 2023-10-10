@@ -6,10 +6,14 @@ use clap::Parser;
 /// A voxel game inspired by Minecraft, CardLife, and a few other similar titles.
 pub struct Cli {
     #[clap(long)]
-    /// Bevy log level.
+    /// Bevy log level
     pub bevy_log_level: Option<bevy::log::Level>,
 
     #[clap(long)]
-    /// Rebuild assets even if there is no need to.
+    /// Rebuild assets even if there is no need to
     pub rebuild_assets: bool,
+
+    #[clap(long)]
+    /// Debug messages (Does not include Bevy debug messages)
+    pub debug: bool,
 }

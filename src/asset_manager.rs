@@ -11,6 +11,21 @@ use crate::cli;
 
 // Build all the user's asset packs into one singular asset pack.
 fn build_unified_asset_links() -> Result<(), io::Error> {
+    let asset_packs: Vec<Path> = directory::list_items(places::asset_packs())?.into_iter()
+        .filter(|x| x.path_type() == PathType::Directory || (x.path_type() == PathType::File && x.to_string().ends_with(".zip")))
+        .collect();
+
+    for i in asset_packs.iter() {
+        log::debug!("{}", i.to_string());
+
+        if i.path_type() == PathType::File {
+            log::task!("Process asset pack in .zip form.");
+        }
+
+        else if i.path_type() == PathType::Directory {
+        }
+    }
+
     return Ok(());
 }
 
