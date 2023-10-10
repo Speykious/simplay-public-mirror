@@ -57,6 +57,7 @@ fn app() -> ExitCode {
 
     env::set_var("BEVY_ASSET_ROOT", places::assets().to_string());
 
+    run_exit_code_function!(places::delete_temp_dirs());
     run_exit_code_function!(places::create_all_dirs());
     run_exit_code_function!(asset_manager::refresh_asset_packs_checksum());
     run_exit_code_function!(asset_manager::build_assets_if_needed());

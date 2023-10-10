@@ -11,6 +11,13 @@ use crate::cli;
 
 // Build all the user's asset packs into one singular asset pack.
 fn build_unified_asset_links() -> Result<(), io::Error> {
+    log::task!("Build unified asset links.");
+
+    return Ok(());
+}
+
+// Construct all the unzipped asset packs.
+fn construct_unzipped_asset_packs() -> Result<(), io::Error> {
     let asset_packs: Vec<Path> = directory::list_items(places::asset_packs())?.into_iter()
         .filter(|x| x.path_type() == PathType::Directory || (x.path_type() == PathType::File && x.to_string().ends_with(".zip")))
         .collect();
@@ -23,6 +30,7 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
         }
 
         else if i.path_type() == PathType::Directory {
+            fs_action::copy(i.clone(), places::unzipped_asset_packs_cache())?;
         }
     }
 
@@ -31,12 +39,13 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
 
 /// Read all the built asset packs, then build the game's assets from the data.
 pub fn build_assets() -> Result<(), io::Error> {
+    log::info!("Unzipping all asset packs...");
+
+    construct_unzipped_asset_packs()?;
+
     log::info!("Building unified asset links...");
 
-    match build_unified_asset_links() {
-        Ok(_) => (),
-        Err(e) => return Err(e),
-    };
+    build_unified_asset_links()?;
 
     log::info!("Building game assets...");
 
@@ -45,10 +54,7 @@ pub fn build_assets() -> Result<(), io::Error> {
     // Record checksum.
     log::generic!("Saving built checksum...");
 
-    match file::write(match asset_packs_checksum() {
-        Ok(o) => o,
-        Err(e) => return Err(e),
-    }.as_str(), checksum_file()) {
+    match file::write(asset_packs_checksum()?.as_str(), checksum_file()) {
         Ok(_) => (),
         Err(e) => {
             log::error!("Failed to write to cache checksum!");

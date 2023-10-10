@@ -74,3 +74,29 @@ pub fn create_all_dirs() -> Result<(), io::Error> {
 
     return Ok(());
 }
+
+// Delete all temporary the directories.
+pub fn delete_temp_dirs() -> Result<(), io::Error> {
+    let directories = vec![
+        unified_asset_links(),
+        unzipped_asset_packs_cache(),
+    ];
+
+    info!("Deleting temporary directories...");
+
+    for i in directories.iter() {
+        if i.exists() == true {
+            match fs_action::delete(i.clone()) {
+                Ok(_) => {
+                    generic!("Deleted directory: {}", i.to_string());
+                },
+                Err(e) => {
+                    error!("Failed to delete directory: {}", i.to_string());
+                    return Err(e);
+                },
+            };
+        }
+    }
+
+    return Ok(());
+}
