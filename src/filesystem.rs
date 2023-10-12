@@ -220,3 +220,24 @@ pub mod fs_action {
         return Ok(());
     }
 }
+
+pub mod archive {
+    pub mod zip {
+        use std::io;
+        use std::fs;
+        use std::path::PathBuf;
+        use super::super::Path;
+
+        pub fn extract(archive_path: Path, target_path: Path, strip_toplevel: bool) -> Result<(), io::Error> {
+            let archive = fs::File::open(archive_path.to_string())?;
+            let target = PathBuf::from(target_path.to_string());
+
+            match zip_extract::extract(archive, &target, strip_toplevel) {
+                Ok(_) => (),
+                Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to unzip archive!")),
+            };
+
+            return Ok(());
+        }
+    }
+}

@@ -26,7 +26,9 @@ fn construct_unzipped_asset_packs() -> Result<(), io::Error> {
         log::debug!("{}", i.to_string());
 
         if i.path_type() == PathType::File {
-            log::task!("Process asset pack in .zip form.");
+            let target_path = Path::new(&format!("{}/{}", places::unzipped_asset_packs_cache().to_string(), i.basename().replace(".zip", "")));
+            
+            archive::zip::extract(i.clone(), target_path, false)?;
         }
 
         else if i.path_type() == PathType::Directory {
