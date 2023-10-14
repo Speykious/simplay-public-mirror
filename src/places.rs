@@ -60,7 +60,7 @@ pub fn create_all_dirs() -> Result<(), io::Error> {
 
     for i in directories.iter() {
         if i.exists() == false {
-            match directory::create(i.clone()) {
+            match directory::create(i) {
                 Ok(_) => {
                     generic!("Created directory: {}", i.to_string());
                 },
@@ -86,7 +86,7 @@ pub fn delete_temp_dirs() -> Result<(), io::Error> {
 
     for i in directories.iter() {
         if i.exists() == true {
-            match fs_action::delete(i.clone()) {
+            match fs_action::delete(i) {
                 Ok(_) => {
                     generic!("Deleted directory: {}", i.to_string());
                 },

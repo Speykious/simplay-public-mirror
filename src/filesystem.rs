@@ -79,7 +79,7 @@ pub mod directory {
     use walkdir::WalkDir;
     use super::Path;
 
-    pub fn list_items(path: Path) -> Result<Vec<Path>, io::Error> {
+    pub fn list_items(path: &Path) -> Result<Vec<Path>, io::Error> {
         let mut items: Vec<Path> = Vec::new();
 
         for i in match std::fs::read_dir(path.to_string()) {
@@ -95,7 +95,7 @@ pub mod directory {
         return Ok(items);
     }
 
-    pub fn list_items_recursive(path: Path) -> Result<Vec<Path>, io::Error> {
+    pub fn list_items_recursive(path: &Path) -> Result<Vec<Path>, io::Error> {
         let mut items: Vec<Path> = Vec::new();
 
         for i in WalkDir::new(path.to_string()) {
@@ -108,7 +108,7 @@ pub mod directory {
         return Ok(items);
     }
 
-    pub fn create(path: Path) -> Result<(), io::Error> {
+    pub fn create(path: &Path) -> Result<(), io::Error> {
         return match std::fs::create_dir_all(path.to_string()) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
@@ -121,7 +121,7 @@ pub mod file {
     use std::io::{self, Read, Write};
     use super::Path;
 
-    pub fn read(path: Path) -> Result<String, io::Error> {
+    pub fn read(path: &Path) -> Result<String, io::Error> {
         let mut file = match File::open(path.to_string()) {
             Ok(o) => o,
             Err(e) => return Err(e),
@@ -137,7 +137,7 @@ pub mod file {
         return Ok(contents);
     }
 
-    pub fn write(contents: &str, path: Path) -> Result<(), io::Error> {
+    pub fn write(contents: &str, path: &Path) -> Result<(), io::Error> {
         let mut file = match File::create(path.to_string()) {
             Ok(o) => o,
             Err(e) => return Err(e),
@@ -158,13 +158,13 @@ pub mod fs_action {
     use super::{Path, PathType};
 
     /// Move a file or directory from point A, to point B!
-    pub fn mv(path_from: Path, path_to: Path) -> Result<(), io::Error> {
-        match copy(path_from.clone(), path_to.clone()) {
+    pub fn mv(path_from: &Path, path_to: &Path) -> Result<(), io::Error> {
+        match copy(path_from, path_to) {
             Ok(_) => (),
             Err(e) => return Err(e),
         };
 
-        match delete(path_from.clone()) {
+        match delete(path_from) {
             Ok(_) => (),
             Err(e) => return Err(e),
         };
@@ -173,7 +173,7 @@ pub mod fs_action {
     }
 
     /// Copy a file.
-    pub fn copy(path_from: Path, path_to: Path) -> Result<(), io::Error> {
+    pub fn copy(path_from: &Path, path_to: &Path) -> Result<(), io::Error> {
         if path_from.path_type() == PathType::File {
             match fs::copy(path_from.to_string(), path_to.to_string()) {
                 Ok(_) => (),
@@ -200,7 +200,7 @@ pub mod fs_action {
     }
 
     /// Delete a file. (Be careful!)
-    pub fn delete(path: Path) -> Result<(), io::Error> {
+    pub fn delete(path: &Path) -> Result<(), io::Error> {
         if path.path_type() == PathType::File {
             match fs::remove_file(path.to_string()) {
                 Ok(_) => (),
@@ -230,7 +230,7 @@ pub mod archive {
         use std::path::PathBuf;
         use super::super::Path;
 
-        pub fn extract(archive_path: Path, target_path: Path, strip_toplevel: bool) -> Result<(), io::Error> {
+        pub fn extract(archive_path: &Path, target_path: &Path, strip_toplevel: bool) -> Result<(), io::Error> {
             let archive = fs::File::open(archive_path.to_string())?;
             let target = PathBuf::from(target_path.to_string());
 

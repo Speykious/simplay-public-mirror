@@ -46,7 +46,7 @@ impl PackInfo {
 
 // Build all the user's asset packs into one singular asset pack.
 fn build_unified_asset_links() -> Result<(), io::Error> {
-    let order: PackOrder = match toml::from_str(file::read(Path::new(&format!("{}/order.toml", places::asset_packs().to_string())))?.as_str()) {
+    let order: PackOrder = match toml::from_str(file::read(&Path::new(&format!("{}/order.toml", places::asset_packs().to_string())))?.as_str()) {
         Ok(o) => o,
         Err(_) => {
             return Err(io::Error::new(io::ErrorKind::Other, "Failed to parse TOML for pack order!"))
@@ -71,7 +71,7 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
             continue;
         }
 
-        let pack_info: PackInfo = match toml::from_str(file::read(pack_info_path)?.as_str()) {
+        let pack_info: PackInfo = match toml::from_str(file::read(&pack_info_path)?.as_str()) {
             Ok(o) => o,
             Err(e) => {
                 log::generic!("Failed to parse PackInfo from pack.toml: {:?}", e);
@@ -88,7 +88,7 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
             continue;
         }
 
-        let assets = directory::list_items_recursive(Path::new(&format!("{}/assets", pack_path.to_string())))?;
+        let assets = directory::list_items_recursive(&Path::new(&format!("{}/assets", pack_path.to_string())))?;
 
         let assets: Vec<Path> = assets.into_iter()
             .filter(|x| x.path_type() == PathType::File)
@@ -106,14 +106,14 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
         Err(_) => {
             return Err(io::Error::new(io::ErrorKind::Other, "Failed to save map to links file."));
         },
-    }.as_str(), Path::new(&format!("{}/links.toml", places::unified_asset_links().to_string())))?;
+    }.as_str(), &Path::new(&format!("{}/links.toml", places::unified_asset_links().to_string())))?;
 
     return Ok(());
 }
 
 // Construct all the unzipped asset packs.
 fn construct_unzipped_asset_packs() -> Result<(), io::Error> {
-    let asset_packs: Vec<Path> = directory::list_items(places::asset_packs())?.into_iter()
+    let asset_packs: Vec<Path> = directory::list_items(&places::asset_packs())?.into_iter()
         .filter(|x| x.path_type() == PathType::Directory || (x.path_type() == PathType::File && x.to_string().ends_with(".zip")))
         .collect();
 
@@ -123,11 +123,11 @@ fn construct_unzipped_asset_packs() -> Result<(), io::Error> {
         if i.path_type() == PathType::File {
             let target_path = Path::new(&format!("{}/{}", places::unzipped_asset_packs_cache().to_string(), i.basename().replace(".zip", "")));
             
-            archive::zip::extract(i.clone(), target_path, false)?;
+            archive::zip::extract(i, &target_path, false)?;
         }
 
         else if i.path_type() == PathType::Directory {
-            fs_action::copy(i.clone(), places::unzipped_asset_packs_cache())?;
+            fs_action::copy(i, &places::unzipped_asset_packs_cache())?;
         }
     }
 
@@ -151,7 +151,7 @@ pub fn build_assets() -> Result<(), io::Error> {
     // Record checksum.
     log::generic!("Saving built checksum...");
 
-    match file::write(asset_packs_checksum()?.as_str(), checksum_file()) {
+    match file::write(asset_packs_checksum()?.as_str(), &checksum_file()) {
         Ok(_) => (),
         Err(e) => {
             log::error!("Failed to write to cache checksum!");
@@ -201,7 +201,7 @@ fn checksum_file() -> Path {
 }
 
 fn cache_checksum() -> Result<String, io::Error> {
-    return match file::read(checksum_file()) {
+    return match file::read(&checksum_file()) {
         Ok(o) => Ok(o),
         Err(e) => Err(e),
     };
@@ -213,14 +213,14 @@ fn asset_packs_checksum_file() -> Path {
 
 fn asset_packs_checksum() -> Result<String, io::Error> {
     if asset_packs_checksum_file().exists() {
-        let sum = file::read(asset_packs_checksum_file())?;
+        let sum = file::read(&asset_packs_checksum_file())?;
 
         return Ok(sum.trim().to_string());
     }
 
     log::info!("Getting all asset pack file checksums, this may take a while...");
 
-    let files = match directory::list_items_recursive(places::asset_packs()) {
+    let files = match directory::list_items_recursive(&places::asset_packs()) {
         Ok(o) => o,
         Err(e) => return Err(e),
     };
@@ -247,7 +247,7 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
         files_checksum.push_str(" ");
     }
 
-    file::write(files_checksum.trim(), asset_packs_checksum_file())?;
+    file::write(files_checksum.trim(), &asset_packs_checksum_file())?;
 
     return Ok(files_checksum.trim().to_string());
 }
@@ -255,7 +255,7 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
 /// Remove the old asset pack cache checksum file. (Do this if the asset packs were changed.)
 pub fn refresh_asset_packs_checksum() -> Result<(), io::Error> {
     if asset_packs_checksum_file().exists() {
-        fs_action::delete(asset_packs_checksum_file())?;
+        fs_action::delete(&asset_packs_checksum_file())?;
     }
 
     return Ok(());
