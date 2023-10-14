@@ -49,6 +49,10 @@ impl Path {
         return segments[segments.len() - 1].to_string();
     }
 
+    pub fn parent_path(&self) -> Self {
+        return Self::new(&self.to_string().replace(&format!("{sc}{}", self.basename(), sc = Self::split_char()), ""));
+    }
+
     pub fn path_type(&self) -> PathType {
         if self.exists() == false {
             return PathType::Invalid;
@@ -159,23 +163,26 @@ pub mod fs_action {
 
     /// Move a file or directory from point A, to point B!
     pub fn mv(path_from: &Path, path_to: &Path) -> Result<(), io::Error> {
-        match copy(path_from, path_to) {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        };
-
-        match delete(path_from) {
-            Ok(_) => (),
-            Err(e) => return Err(e),
-        };
+        copy(path_from, path_to)?;
+        delete(path_from)?;
 
         return Ok(());
     }
 
     /// Copy a file.
     pub fn copy(path_from: &Path, path_to: &Path) -> Result<(), io::Error> {
+        let path_to_patched: Path;
+
+        if path_to.path_type() == PathType::Directory && path_to.exists() {
+            path_to_patched = Path::new(&format!("{}/{}", path_to.to_string(), path_from.basename()));
+        }
+
+        else {
+            path_to_patched = path_to.clone();
+        }
+        
         if path_from.path_type() == PathType::File {
-            match fs::copy(path_from.to_string(), path_to.to_string()) {
+            match fs::copy(path_from.to_string(), path_to_patched.to_string()) {
                 Ok(_) => (),
                 Err(e) => return Err(e),
             };
@@ -186,7 +193,7 @@ pub mod fs_action {
 
             options.copy_inside = true;
 
-            match fs_extra::dir::copy(path_from.to_string(), path_to.to_string(), &options) {
+            match fs_extra::dir::copy(path_from.to_string(), path_to_patched.to_string(), &options) {
                 Ok(_) => (),
                 Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to copy directory!")),
             };

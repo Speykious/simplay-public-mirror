@@ -14,7 +14,7 @@ use crate::cli;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AssetLinks {
-    links: HashMap<String, Path>,
+    links: Vec<(Path, String)>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -53,7 +53,7 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
         },
     };
 
-    let mut map: HashMap<String, Path> = HashMap::new();
+    let mut map: HashMap<String, (Path, String)> = HashMap::new();
 
     for i in order.order.iter().rev() {
         let pack_path = Path::new(&format!("{}/{}", places::unzipped_asset_packs_cache().to_string(), i));
@@ -95,13 +95,21 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
             .collect();
 
         for a in assets {
-            if map.contains_key(&a.basename()) == false {
-                map.insert(a.basename(), a);
+            let key = a.to_string().replace(format!("{}{sc}assets{sc}", pack_path.to_string(), sc = Path::split_char()).as_str(), "");
+
+            if map.contains_key(&key) == false {
+                map.insert(key, (a, i.to_string()));
             }
         }
     }
 
-    file::write(match toml::to_string(&map) {
+    let mut link_array: Vec<(Path, String)> = Vec::new();
+
+    for l in map.into_values() {
+        link_array.push(l);
+    }
+
+    file::write(match toml::to_string(&AssetLinks { links: link_array }) {
         Ok(o) => o,
         Err(_) => {
             return Err(io::Error::new(io::ErrorKind::Other, "Failed to save map to links file."));
@@ -146,7 +154,25 @@ pub fn build_assets() -> Result<(), io::Error> {
 
     log::info!("Building game assets...");
 
-    // TODO: Block Atlas Generation
+    log::generic!("Copying linked assets to asset cache...");
+
+    let links: AssetLinks = match toml::from_str(file::read(&Path::new(&format!("{}/links.toml", places::unified_asset_links().to_string())))?.as_str()) {
+        Ok(o) => o,
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Failed to parse asset links TOML file."));
+        },
+    };
+
+    for (i, j) in links.links.iter() {
+        let parent_path = i.parent_path();
+
+        let creation_path = Path::new(&parent_path.to_string().replace(&format!("{}/{}/assets/", places::unzipped_asset_packs_cache().to_string(), j), ""));
+        let creation_path = Path::new(&format!("{}/{}", places::assets().to_string(), creation_path.to_string()));
+
+        directory::create(&creation_path)?;
+
+        fs_action::mv(i, &creation_path)?;
+    }
 
     // Record checksum.
     log::generic!("Saving built checksum...");
