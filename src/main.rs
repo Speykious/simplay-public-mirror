@@ -55,7 +55,7 @@ fn main() {
 fn app() -> ExitCode {
     let args = cli::Cli::parse();
 
-    env::set_var("BEVY_ASSET_ROOT", places::assets().to_string());
+    env::set_var("BEVY_ASSET_ROOT", places::cache().to_string());
 
     run_exit_code_function!(places::delete_temp_dirs());
     run_exit_code_function!(places::create_all_dirs());
