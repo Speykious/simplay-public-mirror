@@ -2,6 +2,9 @@
 
 use std::io;
 use clap::Parser;
+use serde::{Serialize, Deserialize};
+use colored::Colorize;
+use hashbrown::HashMap;
 use crate::places;
 use crate::log;
 use crate::log::macro_deps::*;
@@ -9,9 +12,101 @@ use crate::filesystem::*;
 use crate::hash;
 use crate::cli;
 
+#[derive(Debug, Serialize, Deserialize)]
+struct AssetLinks {
+    links: HashMap<String, Path>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct PackOrder {
+    order: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(deny_unknown_fields, default)]
+struct PackInfo {
+    display_name: String,
+    description: String,
+    authors: Vec<String>,
+    licenses: Vec<String>,
+    pack_format: i32,
+}
+
+impl PackInfo {
+    fn default() -> Self {
+        return Self {
+            display_name: String::from("< Unnamed Asset Pack >"),
+            description: String::from("< No Description >"),
+            authors: Vec::new(),
+            licenses: Vec::new(),
+            pack_format: -1, // -1 = undefined
+        };
+    }
+}
+
 // Build all the user's asset packs into one singular asset pack.
 fn build_unified_asset_links() -> Result<(), io::Error> {
-    log::task!("Build unified asset links.");
+    let order: PackOrder = match toml::from_str(file::read(Path::new(&format!("{}/order.toml", places::asset_packs().to_string())))?.as_str()) {
+        Ok(o) => o,
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Failed to parse TOML for pack order!"))
+        },
+    };
+
+    let mut map: HashMap<String, Path> = HashMap::new();
+
+    for i in order.order.iter().rev() {
+        let pack_path = Path::new(&format!("{}/{}", places::unzipped_asset_packs_cache().to_string(), i));
+        let pack_info_path = Path::new(&format!("{}/pack.toml", pack_path.to_string()));
+
+        if pack_path.exists() == false {
+            log::error!("Pack non-existant: {} (Skipping...)", i);
+
+            continue;
+        }
+
+        if pack_info_path.exists() == false {
+            log::error!("No pack.toml in: {} (Skipping...)", i);
+
+            continue;
+        }
+
+        let pack_info: PackInfo = match toml::from_str(file::read(pack_info_path)?.as_str()) {
+            Ok(o) => o,
+            Err(e) => {
+                log::generic!("Failed to parse PackInfo from pack.toml: {:?}", e);
+
+                return Err(io::Error::new(io::ErrorKind::Other, "Failed to parse pack info TOML!"))
+            },
+        };
+
+        log::generic!("Processing pack: {} : {}", pack_info.display_name.bright_cyan().bold(), pack_info.description.bright_green().bold());
+
+        if Path::new(&format!("{}/assets", pack_path.to_string())).exists() == false {
+            log::error!("Missing 'assets' directory: {} (Skipping...)", pack_info.display_name);
+
+            continue;
+        }
+
+        let assets = directory::list_items_recursive(Path::new(&format!("{}/assets", pack_path.to_string())))?;
+
+        let assets: Vec<Path> = assets.into_iter()
+            .filter(|x| x.path_type() == PathType::File)
+            .collect();
+
+        for a in assets {
+            if map.contains_key(&a.basename()) == false {
+                map.insert(a.basename(), a);
+            }
+        }
+    }
+
+    file::write(match toml::to_string(&map) {
+        Ok(o) => o,
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Failed to save map to links file."));
+        },
+    }.as_str(), Path::new(&format!("{}/links.toml", places::unified_asset_links().to_string())))?;
 
     return Ok(());
 }

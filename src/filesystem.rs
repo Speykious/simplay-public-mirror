@@ -1,13 +1,15 @@
 #![allow(dead_code)]
 
-#[derive(PartialEq, Eq)]
+use serde::{Serialize, Deserialize};
+
+#[derive(PartialEq, Eq, Clone, Serialize, Deserialize, Debug)]
 pub enum PathType {
     File,
     Directory,
     Invalid,
 }
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Serialize, Deserialize, Debug)]
 pub struct Path {
     path: String,
 }
