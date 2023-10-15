@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use std::io;
-use clap::Parser;
+use clap::*;
 use serde::{Serialize, Deserialize};
 use colored::Colorize;
 use hashbrown::HashMap;
@@ -12,6 +12,13 @@ use crate::log::macro_deps::*;
 use crate::filesystem::*;
 use crate::hash;
 use crate::cli;
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Subcommand, ValueEnum)]
+pub enum AssetCheckBuildBehavior {
+    Yes,
+    IfNeeded,
+    No,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct BlockAtlasEntries {
@@ -279,9 +286,16 @@ pub fn build_assets_if_needed() -> Result<(), io::Error> {
 pub fn is_build_needed() -> bool {
     let args = cli::Cli::parse();
 
-    if args.rebuild_assets {
-        return true;
-    }
+    match args.build_assets {
+        Some(s) => {
+            match s {
+                AssetCheckBuildBehavior::Yes => return true,
+                AssetCheckBuildBehavior::No => return false,
+                AssetCheckBuildBehavior::IfNeeded => (),
+            };
+        },
+        None => (),
+    };
 
     if checksum_file().exists() == false {
         return true;
