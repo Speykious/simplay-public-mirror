@@ -16,4 +16,8 @@ pub struct Cli {
     #[clap(long)]
     /// Debug messages (Does not include Bevy debug messages)
     pub debug: bool,
+
+    #[clap(long)]
+    /// Quit before the actual game gets started up.
+    pub quit_before_game: bool,
 }

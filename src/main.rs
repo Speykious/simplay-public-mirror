@@ -62,6 +62,10 @@ fn app() -> ExitCode {
     run_exit_code_function!(asset_manager::refresh_asset_packs_checksum());
     run_exit_code_function!(asset_manager::build_assets_if_needed());
 
+    if args.quit_before_game {
+        return ExitCode::Success;
+    }
+
     App::new()
         .add_plugins((DefaultPlugins.set(
             WindowPlugin {
