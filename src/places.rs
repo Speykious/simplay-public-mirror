@@ -29,6 +29,11 @@ pub fn assets() -> Path {
     return_path!("assets", cache().to_string());
 }
 
+/// Built assets that are not ever included in asset packs, but rather built at runtime.
+pub fn custom_built_assets() -> Path {
+    return_path!(".RUNTIME", assets().to_string());
+}
+
 /// User installed asset packs.
 pub fn asset_packs() -> Path {
     return_path!("asset_packs", base().to_string());
@@ -52,6 +57,7 @@ pub fn create_all_dirs() -> Result<(), io::Error> {
 
         cache(),
         assets(),
+        custom_built_assets(),
         unified_asset_links(),
         unzipped_asset_packs_cache(),
     ];

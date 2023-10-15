@@ -5,12 +5,18 @@ use clap::Parser;
 use serde::{Serialize, Deserialize};
 use colored::Colorize;
 use hashbrown::HashMap;
+use image::{DynamicImage, ImageBuffer};
 use crate::places;
 use crate::log;
 use crate::log::macro_deps::*;
 use crate::filesystem::*;
 use crate::hash;
 use crate::cli;
+
+#[derive(Debug, Serialize, Deserialize)]
+struct BlockAtlasEntries {
+    entries: Vec<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct AssetLinks {
@@ -42,6 +48,69 @@ impl PackInfo {
             pack_format: -1, // -1 = undefined
         };
     }
+}
+
+// Build the block texture atlas.
+fn build_block_atlas_texture() -> Result<(), io::Error> {
+    let textures = get_textures_in(&Path::new(&format!("{}/textures/block", places::assets().to_string())))?;
+
+    let names: Vec<String> = textures.1.into_iter()
+        .map(|x| x.replace(".png", ""))
+        .collect();
+
+    let textures = textures.0;
+
+    // TODO: Instead of using 16, dynamically use image sizes.
+
+    let atlas = ImageBuffer::from_fn(16, 16 * textures.len() as u32, |x, y| {
+        *textures[(y / 16) as usize].clone().into_rgba8().get_pixel(x, y % 16)
+    });
+
+    match atlas.save(format!("{}/block_atlas.png", places::custom_built_assets().to_string())) {
+        Ok(_) => (),
+        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to save block atlas!")),
+    };
+
+    let names_toml = BlockAtlasEntries {
+        entries: names.to_owned(),
+    };
+
+    drop(names); // Clean the old names vector so that there aren't 2 giant names vectors in memory.
+
+    file::write(match &toml::to_string(&names_toml) {
+        Ok(o) => o,
+        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to serialize block atlas entries object.")),
+    }, &Path::new(&format!("{}/block_atlas.toml", places::custom_built_assets().to_string())))?;
+
+    return Ok(());
+}
+
+/// Get textures in a directory. Vec<(Image, LocalPathName)>
+pub fn get_textures_in(path: &Path) -> Result<(Vec<DynamicImage>, Vec<String>), io::Error> {
+    let files: Vec<Path> = directory::list_items(path)?
+        .into_iter()
+        .filter(|x| x.path_type() == PathType::File && x.to_string().ends_with(".png"))
+        .collect();
+
+    let local: Vec<String> = files.iter()
+        .map(|x| x.to_string().replace(&format!("{}{sc}", path.to_string(), sc = Path::split_char()), ""))
+        .collect();
+
+    let mut images: Vec<DynamicImage> = Vec::new();
+
+    for i in files.iter() {
+        images.push(open_image(i)?);
+    }
+
+    return Ok((images, local));
+}
+
+// Open an image.
+fn open_image(path: &Path) -> Result<DynamicImage, io::Error> {
+    return match image::open(path.to_string()) {
+        Ok(o) => Ok(o),
+        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to open image!")),
+    };
 }
 
 // Build all the user's asset packs into one singular asset pack.
@@ -173,6 +242,11 @@ pub fn build_assets() -> Result<(), io::Error> {
 
         fs_action::mv(i, &creation_path)?;
     }
+
+    // Build block atlas.
+    log::generic!("Building block atlas...");
+
+    build_block_atlas_texture()?;
 
     // Record checksum.
     log::generic!("Saving built checksum...");

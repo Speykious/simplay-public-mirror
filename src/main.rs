@@ -138,7 +138,7 @@ fn spawn_random_shit(
             transform: Transform::from_xyz(0.0, 0.0, 0.0),
             material: materials.add(StandardMaterial {
                 // base_color: Color::rgb(0.05, 0.5, 0.35),
-                base_color_texture: Some(asset_server.load("textures/block/grass_side.png")),
+                base_color_texture: Some(asset_server.load(format!("{}/block_atlas.png", places::custom_built_assets().to_string()))),
                 // double_sided: true, // debug
                 // cull_mode: None, // debug
                 ..default()
