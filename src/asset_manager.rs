@@ -59,37 +59,7 @@ impl PackInfo {
 
 // Build the block texture atlas.
 fn build_block_atlas_texture() -> Result<(), io::Error> {
-    let textures = get_textures_in(&Path::new(&format!("{}/textures/block", places::assets().to_string())))?;
-
-    let names: Vec<String> = textures.1.into_iter()
-        .map(|x| x.replace(".png", ""))
-        .collect();
-
-    let textures = textures.0;
-
-    // TODO: Instead of using 16, dynamically use image sizes.
-
-    let atlas = ImageBuffer::from_fn(16, 16 * textures.len() as u32, |x, y| {
-        *textures[(y / 16) as usize].clone().into_rgba8().get_pixel(x, y % 16)
-    });
-
-    match atlas.save(format!("{}/block_atlas.png", places::custom_built_assets().to_string())) {
-        Ok(_) => (),
-        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to save block atlas!")),
-    };
-
-    let names_toml = BlockAtlasEntries {
-        entries: names.to_owned(),
-    };
-
-    drop(names); // Clean the old names vector so that there aren't 2 giant names vectors in memory.
-
-    file::write(match &toml::to_string(&names_toml) {
-        Ok(o) => o,
-        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to serialize block atlas entries object.")),
-    }, &Path::new(&format!("{}/block_atlas.toml", places::custom_built_assets().to_string())))?;
-
-    return Ok(());
+    return Ok(()); // todo
 }
 
 /// Get textures in a directory. Vec<(Image, LocalPathName)>
