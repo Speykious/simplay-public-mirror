@@ -5,7 +5,7 @@ use clap::*;
 use serde::{Serialize, Deserialize};
 use colored::Colorize;
 use hashbrown::HashMap;
-use image::{DynamicImage, ImageBuffer};
+use image::{DynamicImage, ImageBuffer, Rgba};
 use crate::places;
 use crate::log;
 use crate::log::macro_deps::*;
@@ -59,7 +59,80 @@ impl PackInfo {
 
 // Build the block texture atlas.
 fn build_block_atlas_texture() -> Result<(), io::Error> {
-    return Ok(()); // todo
+    let texture_files = directory::list_items(&places::assets().add_str("textures/block"))?;
+
+    let mut textures: Vec<DynamicImage> = Vec::new();
+
+    for i in texture_files.iter().filter(|x| x.to_string().ends_with(".png")) {
+        textures.push(open_image(i)?);
+    }
+
+    drop(texture_files);
+
+    let mut column_map: HashMap<u32, Vec<usize>> = HashMap::new();
+    let mut column_size_map: HashMap<u32, u32> = HashMap::new();
+
+    for i in 0..textures.len() {
+        let width: u32 = textures[i].width();
+        let height: u32 = textures[i].height();
+
+        if column_map.contains_key(&width) == false {
+            column_map.insert(width, Vec::new());
+            column_size_map.insert(width, 0);
+        }
+
+        let mut index_array: Vec<usize> = column_map.get(&width).unwrap().iter().map(|x| *x).collect(); // Guarenteed value.
+        let mut column_size = *column_size_map.get(&width).unwrap(); // Guarenteed value.
+
+        index_array.push(i);
+        column_size += height;
+
+        column_map.insert(width, index_array);
+        column_size_map.insert(width, column_size);
+    }
+
+    let mut atlas_size: (u32, u32) = (0, 0);
+
+    atlas_size.1 = *column_size_map.values().max().unwrap();
+
+    for i in column_size_map.keys() {
+        atlas_size.0 += i;
+    }
+
+    let mut pixel_map: HashMap<(u32, u32), Rgba<u8>> = HashMap::new();
+
+    let mut pixel_offset: (u32, u32) = (0, 0);
+
+    for c in column_map.keys() {
+        for i in column_map.get(c).unwrap().iter() {
+            let texture: &DynamicImage = &textures[*i];
+
+            let width: u32 = texture.width();
+            let height: u32 = texture.height();
+
+            for x in 0..width {
+                for y in 0..height {
+                    pixel_map.insert((x + pixel_offset.0, y + pixel_offset.1), *texture.clone().into_rgba8().get_pixel(x, y));
+                }
+            }
+
+            pixel_offset.1 += height;
+        }
+
+        pixel_offset.1 = 0;
+        pixel_offset.0 += c;
+    }
+
+    let atlas = ImageBuffer::from_fn(atlas_size.0, atlas_size.1, |x, y| { *pixel_map.get(&(x, y)).unwrap_or(&Rgba::from([0, 0, 0, 0])) });
+
+    match atlas.save(places::custom_built_assets().add_str("block_atlas.png").to_string()) {
+        Ok(_) => (),
+        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to save block atlas!")),
+    };
+
+    // TODO: Creating and saving block_atlas.toml file.
+
+    return Ok(());
 }
 
 /// Get textures in a directory. Vec<(Image, LocalPathName)>
@@ -86,7 +159,9 @@ pub fn get_textures_in(path: &Path) -> Result<(Vec<DynamicImage>, Vec<String>), 
 fn open_image(path: &Path) -> Result<DynamicImage, io::Error> {
     return match image::open(path.to_string()) {
         Ok(o) => Ok(o),
-        Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to open image!")),
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Failed to open image!"))
+        },
     };
 }
 
@@ -172,8 +247,6 @@ fn construct_unzipped_asset_packs() -> Result<(), io::Error> {
         .collect();
 
     for i in asset_packs.iter() {
-        log::debug!("{}", i.to_string());
-
         if i.path_type() == PathType::File {
             let target_path = Path::new(&format!("{}/{}", places::unzipped_asset_packs_cache().to_string(), i.basename().replace(".zip", "")));
             

@@ -76,6 +76,20 @@ impl Path {
             return '/';
         }
     }
+
+    pub fn add(&self, extra: &Self) -> Self {
+        if extra.to_string().starts_with(Self::split_char()) == false {
+            return Self::new(&format!("{}/{}", self.to_string(), extra.to_string()));
+        }
+
+        else {
+            return Self::new(&format!("{}{}", self.to_string(), extra.to_string()));
+        }
+    }
+
+    pub fn add_str(&self, extra: &str) -> Self {
+        return self.add(&Path::new(extra));
+    }
 }
 
 pub mod directory {
