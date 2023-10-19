@@ -35,6 +35,12 @@ struct PackOrder {
     order: Vec<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AtlasUVMapElement {
+    pub corner: (u32, u32), // Texture top-left corner.
+    pub size: (u32, u32), // Texture size.
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields, default)]
 struct PackInfo {
@@ -96,6 +102,9 @@ fn build_block_atlas_texture() -> Result<(), io::Error> {
         atlas_size.0 += i;
     }
 
+    // <Texture Name, (Top-Left Corner Pixel Coordinates, Texture Size In Pixels)>
+    let mut uv_map: HashMap<String, AtlasUVMapElement> = HashMap::new();
+
     let mut pixel_map: HashMap<(u32, u32), Rgba<u8>> = HashMap::new();
 
     let mut pixel_offset: (u32, u32) = (0, 0);
@@ -104,8 +113,12 @@ fn build_block_atlas_texture() -> Result<(), io::Error> {
         for i in column_map.get(c).unwrap().iter() {
             let texture: DynamicImage = open_image(&texture_files[*i])?;
 
+            let texture_name: String = texture_files[*i].basename().replace(".png", "");
+
             let width: u32 = texture.width();
             let height: u32 = texture.height();
+
+            uv_map.insert(texture_name, AtlasUVMapElement { corner: pixel_offset, size: (width, height) });
 
             for x in 0..width {
                 for y in 0..height {
@@ -127,7 +140,12 @@ fn build_block_atlas_texture() -> Result<(), io::Error> {
         Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to save block atlas!")),
     };
 
-    // TODO: Creating and saving block_atlas.toml file.
+    file::write(match toml::to_string(&uv_map) {
+        Ok(o) => o,
+        Err(_) => {
+            return Err(io::Error::new(io::ErrorKind::Other, "Failed to serialize atlas UV map!"));
+        },
+    }.as_str(), &places::custom_built_assets().add_str("block_atlas.toml"))?;
 
     return Ok(());
 }
