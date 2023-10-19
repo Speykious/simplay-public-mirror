@@ -59,22 +59,19 @@ impl PackInfo {
 
 // Build the block texture atlas.
 fn build_block_atlas_texture() -> Result<(), io::Error> {
-    let texture_files = directory::list_items(&places::assets().add_str("textures/block"))?;
-
-    let mut textures: Vec<DynamicImage> = Vec::new();
-
-    for i in texture_files.iter().filter(|x| x.to_string().ends_with(".png")) {
-        textures.push(open_image(i)?);
-    }
-
-    drop(texture_files);
+    let texture_files: Vec<Path> = directory::list_items(&places::assets().add_str("textures/block"))?
+        .into_iter()
+        .filter(|x| x.path_type() == PathType::File && x.to_string().ends_with(".png"))
+        .collect();
 
     let mut column_map: HashMap<u32, Vec<usize>> = HashMap::new();
     let mut column_size_map: HashMap<u32, u32> = HashMap::new();
 
-    for i in 0..textures.len() {
-        let width: u32 = textures[i].width();
-        let height: u32 = textures[i].height();
+    for i in 0..texture_files.len() {
+        let texture = open_image(&texture_files[i])?;
+
+        let width: u32 = texture.width();
+        let height: u32 = texture.height();
 
         if column_map.contains_key(&width) == false {
             column_map.insert(width, Vec::new());
@@ -105,7 +102,7 @@ fn build_block_atlas_texture() -> Result<(), io::Error> {
 
     for c in column_map.keys() {
         for i in column_map.get(c).unwrap().iter() {
-            let texture: &DynamicImage = &textures[*i];
+            let texture: DynamicImage = open_image(&texture_files[*i])?;
 
             let width: u32 = texture.width();
             let height: u32 = texture.height();
