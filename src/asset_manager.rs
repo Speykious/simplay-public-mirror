@@ -41,6 +41,12 @@ pub struct AtlasUVMapElement {
     pub size: (u32, u32), // Texture size.
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+pub struct BlockAtlasInfo {
+    pub size: (u32, u32), // Atlas size.
+    pub uv_map: HashMap<String, AtlasUVMapElement>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(deny_unknown_fields, default)]
 struct PackInfo {
@@ -140,7 +146,7 @@ fn build_block_atlas_texture() -> Result<(), io::Error> {
         Err(_) => return Err(io::Error::new(io::ErrorKind::Other, "Failed to save block atlas!")),
     };
 
-    file::write(match toml::to_string(&uv_map) {
+    file::write(match toml::to_string(&BlockAtlasInfo { size: atlas.dimensions(), uv_map }) {
         Ok(o) => o,
         Err(_) => {
             return Err(io::Error::new(io::ErrorKind::Other, "Failed to serialize atlas UV map!"));

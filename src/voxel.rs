@@ -6,7 +6,7 @@ use crate::world;
 use crate::mesher::MeshData;
 use crate::filesystem::*;
 use crate::places;
-use crate::asset_manager::AtlasUVMapElement;
+use crate::asset_manager::{AtlasUVMapElement, BlockAtlasInfo};
 
 pub struct Voxel {
     pub block: BlockType,
@@ -64,7 +64,7 @@ impl Voxel {
             return None;
         }
 
-        let atlas_toml: HashMap<String, AtlasUVMapElement> = match toml::from_str(&match file::read(&places::custom_built_assets().add_str("block_atlas.toml")) {
+        let atlas_toml: BlockAtlasInfo = match toml::from_str(&match file::read(&places::custom_built_assets().add_str("block_atlas.toml")) {
             Ok(o) => o,
             Err(_) => return None, // Kind of a weird way to handle this error, I know. (This error should never trigger.)
         }) {
@@ -77,7 +77,8 @@ impl Voxel {
             None => return None,
         };
 
-        let uv_mod: AtlasUVMapElement = *atlas_toml.get(&texture_name).unwrap_or(&AtlasUVMapElement { corner: (0, 0) , size: (0, 0) });
+        let uv_mod: AtlasUVMapElement = *atlas_toml.uv_map.get(&texture_name).unwrap_or(&AtlasUVMapElement { corner: (0, 0) , size: (0, 0) });
+        let atlas_size: (u32, u32) = atlas_toml.size;
 
         drop(atlas_toml);
         drop(texture_name);
@@ -87,8 +88,11 @@ impl Voxel {
 
         let indices = vec![0, 1, 2, 2, 3, 0];
 
-        let uv_limits_x: (f32, f32) = (0.0, 1.0);
-        let uv_limits_y: (f32, f32) = (0.0, 1.0);
+        let uv_locate_info_1: (u32, u32) = uv_mod.corner; // Top left.
+        let uv_locate_info_2: (u32, u32) = (uv_locate_info_1.0 + uv_mod.size.0, uv_locate_info_1.1 + uv_mod.size.1); // Bottom right.
+
+        let uv_limits_x: (f32, f32) = (uv_locate_info_1.0 as f32 / atlas_size.0 as f32, uv_locate_info_2.0 as f32 / atlas_size.0 as f32);
+        let uv_limits_y: (f32, f32) = (uv_locate_info_1.1 as f32 / atlas_size.1 as f32, uv_locate_info_2.1 as f32 / atlas_size.1 as f32);
 
         let mut general: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
 
