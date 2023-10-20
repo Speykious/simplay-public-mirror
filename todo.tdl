@@ -2,6 +2,7 @@
 [*] >> Actually implement code for the asset_manager module.
 [*] >> Fix vertex sharing code! (Hint: causes weird rendering issues on blocks with a 0 in their position.)
 [*] >> Add real code for vertex sharing optimization.
+[-] >> Properly use the textures from the texture atlas.
 [ ] >> Cull neighboring chunk faces.
 [ ] >> Multi-threading with Rayon (or maybe Tokio).
 [ ] >> Greedy meshing? (Is this really needed?)
