@@ -1,8 +1,12 @@
 #![allow(dead_code)]
 
+use hashbrown::HashMap;
 use crate::block::*;
 use crate::world;
 use crate::mesher::MeshData;
+use crate::filesystem::*;
+use crate::places;
+use crate::asset_manager::AtlasUVMapElement;
 
 pub struct Voxel {
     pub block: BlockType,
@@ -59,6 +63,24 @@ impl Voxel {
         if self.side_enabled(direction) == false {
             return None;
         }
+
+        let atlas_toml: HashMap<String, AtlasUVMapElement> = match toml::from_str(&match file::read(&places::custom_built_assets().add_str("block_atlas.toml")) {
+            Ok(o) => o,
+            Err(_) => return None, // Kind of a weird way to handle this error, I know. (This error should never trigger.)
+        }) {
+            Ok(o) => o,
+            Err(_) => return None,
+        };
+
+        let texture_name: String = match self.block.properties().textures.get(direction) {
+            Some(s) => s,
+            None => return None,
+        };
+
+        let uv_mod: AtlasUVMapElement = *atlas_toml.get(&texture_name).unwrap_or(&AtlasUVMapElement { corner: (0, 0) , size: (0, 0) });
+
+        drop(atlas_toml);
+        drop(texture_name);
 
         let (min_x, min_y, min_z) = (-0.5 - (size.0 - 1) as f32, -0.5 - (size.1 - 1) as f32, -0.5 - (size.2 - 1) as f32);
         let (max_x, max_y, max_z) = (0.5, 0.5, 0.5);

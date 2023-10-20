@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+use hashbrown::HashMap;
+use crate::world;
+
 // Blocks for the game.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum BlockType {
@@ -15,11 +18,38 @@ impl BlockType {
             BlockType::Air => BlockProperties {
                 name: "Air".into(),
                 collision: BlockCollisionType::Gas,
-                textures: [None; 6],
+                textures: BlockTextures::blank(),
                 transparent: true,
                 ..BlockProperties::default()
             },
         };
+    }
+}
+
+// Block textures struct.
+pub struct BlockTextures {
+    textures: HashMap<world::Direction, Option<String>>,
+}
+
+impl BlockTextures {
+    pub fn new(textures: [Option<&str>; 6]) -> Self {
+        let mut texture_map: HashMap<world::Direction, Option<String>> = HashMap::new();
+
+        for (i, d) in world::Direction::all().iter().enumerate() {
+            texture_map.insert(*d, match textures[i] { Some(s) => Some(s.to_string()), None => None });
+        }
+
+        return Self {
+            textures: texture_map,
+        };
+    }
+
+    pub fn blank() -> Self {
+        return Self::new([None; 6]);
+    }
+
+    pub fn get(&self, direction: world::Direction) -> Option<String> {
+        return self.textures.get(&direction).unwrap().clone();
     }
 }
 
@@ -28,7 +58,7 @@ pub struct BlockProperties {
     pub name: String, // This is the name of the block.
     pub collision: BlockCollisionType, // Solid? Liquid? Gas?
     pub transparent: bool, // Are any of the textures transparent? This is used in mesh generation.
-    pub textures: [Option<usize>; 6], // A list of textures for the block. (Index of block texture array).
+    pub textures: BlockTextures, // A list of textures for the block. (Index of block texture array).
 }
 
 impl Default for BlockProperties {
@@ -38,7 +68,7 @@ impl Default for BlockProperties {
             name: "Debug Block".into(),
             collision: BlockCollisionType::Solid,
             transparent: false,
-            textures: [Some(0); 6],
+            textures: BlockTextures::new([Some("debug"); 6]),
         };
     }
 }

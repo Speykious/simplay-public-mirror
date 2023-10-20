@@ -35,7 +35,7 @@ struct PackOrder {
     order: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, Eq, PartialEq)]
 pub struct AtlasUVMapElement {
     pub corner: (u32, u32), // Texture top-left corner.
     pub size: (u32, u32), // Texture size.
