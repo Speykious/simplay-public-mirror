@@ -8,6 +8,8 @@ use crate::world;
 pub enum BlockType {
     Air, // Fun fact: the air block never exists in the chunk block array. It is basically an empty block.
     Debug,
+    Grass,
+    Dirt,
 }
 
 impl BlockType {
@@ -22,6 +24,31 @@ impl BlockType {
                 transparent: true,
                 ..BlockProperties::default()
             },
+
+            BlockType::Grass => BlockProperties {
+                name: "Grass Block".into(),
+                collision: BlockCollisionType::Solid,
+                textures: BlockTextures::new([
+                    Some("grass_side"),
+                    Some("grass_side"),
+                    Some("grass_side"),
+                    Some("grass_side"),
+                    Some("grass_top"),
+                    Some("dirt"),
+                ]),
+                transparent: false,
+                ..BlockProperties::default()
+            },
+
+            BlockType::Dirt => BlockProperties {
+                name: "Grass Block".into(),
+                collision: BlockCollisionType::Solid,
+                textures: BlockTextures::new([
+                    Some("dirt"); 6
+                ]),
+                transparent: false,
+                ..BlockProperties::default()
+            },
         };
     }
 }
@@ -32,6 +59,7 @@ pub struct BlockTextures {
 }
 
 impl BlockTextures {
+    /// Texture order: [North, South, East, West, Up, Down]
     pub fn new(textures: [Option<&str>; 6]) -> Self {
         let mut texture_map: HashMap<world::Direction, Option<String>> = HashMap::new();
 
