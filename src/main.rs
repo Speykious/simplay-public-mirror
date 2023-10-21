@@ -25,10 +25,6 @@ use clap::Parser;
 use chunk::*;
 use block::*;
 
-// ==== DEBUG ====
-const WIREFRAME: bool = true;
-// ===============
-
 macro_rules! run_exit_code_function {
     (
         $function: expr
@@ -102,7 +98,9 @@ fn app() -> ExitCode {
 fn setup(
     mut wireframe_config: ResMut<WireframeConfig>,
 ) {
-    wireframe_config.global = WIREFRAME;
+    let args = cli::Cli::parse();
+
+    wireframe_config.global = args.wireframe;
 }
 
 fn spawn_random_shit(
