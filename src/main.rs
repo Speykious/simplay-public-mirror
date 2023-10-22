@@ -127,6 +127,16 @@ fn spawn_random_shit(
     for x in 0..CHUNK_SIZE.0 {
         for y in 0..CHUNK_SIZE.1 {
             for z in 0..CHUNK_SIZE.2 {
+                if x % 2 == 1 {
+                    continue;
+                }
+                if y % 2 == 1 {
+                    continue;
+                }
+                if z % 2 == 1 {
+                    continue;
+                }
+
                 chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Grass, BlockType::Dirt, BlockType::Debug]));
             }
         }
