@@ -5,7 +5,7 @@ use std::fs;
 use sha256::*;
 use crate::filesystem::*;
 
-pub fn file(path: Path) -> Result<String, io::Error> {
+pub fn file(path: &Path) -> Result<String, io::Error> {
     let bytes = match fs::read(path.to_string()) {
         Ok(o) => o,
         Err(e) => return Err(e),

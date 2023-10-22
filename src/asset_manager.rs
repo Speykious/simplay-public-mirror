@@ -410,7 +410,7 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
     let mut files_checksum_vec: Vec<String> = Vec::new();
 
     for i in files.iter() {
-        files_checksum_vec.push(match hash::file(i.clone()) {
+        files_checksum_vec.push(match hash::file(&i) {
             Ok(o) => o,
             Err(e) => return Err(e),
         });
