@@ -12,7 +12,7 @@ use crate::mesher;
 const GREEDY_MESHING: bool = false;
 // ===============
 
-pub const CHUNK_SIZE: (u8, u8, u8) = (4, 4, 4);
+pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 
 pub struct Chunk {
     blocks: HashMap<(i8, i8, i8), BlockType>, // The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
@@ -87,6 +87,10 @@ impl Chunk {
             BlockType::Air => self.blocks.remove(&position),
             _ => self.blocks.insert(position, blocktype),
         };
+    }
+
+    pub fn get_block_u8(&self, position: (u8, u8, u8)) -> BlockType {
+        return self.get_block((position.0 as i8, position.1 as i8, position.2 as i8));
     }
 
     pub fn get_block(&self, position: (i8, i8, i8)) -> BlockType {

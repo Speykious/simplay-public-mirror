@@ -10,6 +10,7 @@ pub enum BlockType {
     Debug,
     Grass,
     Dirt,
+    Stone,
 }
 
 impl BlockType {
@@ -41,10 +42,20 @@ impl BlockType {
             },
 
             BlockType::Dirt => BlockProperties {
-                name: "Grass Block".into(),
+                name: "Dirt Block".into(),
                 collision: BlockCollisionType::Solid,
                 textures: BlockTextures::new([
                     Some("dirt"); 6
+                ]),
+                transparent: false,
+                ..BlockProperties::default()
+            },
+
+            BlockType::Stone => BlockProperties {
+                name: "Stone Block".into(),
+                collision: BlockCollisionType::Solid,
+                textures: BlockTextures::new([
+                    Some("stone"); 6
                 ]),
                 transparent: false,
                 ..BlockProperties::default()
