@@ -23,6 +23,6 @@ pub struct Cli {
     pub build_assets: Option<AssetCheckBuildBehavior>,
 
     #[clap(short, long)]
-    /// Enable/disable wireframe rendering
-    pub wireframe: bool,
+    /// Use the debug editor?
+    pub editor: bool,
 }

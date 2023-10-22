@@ -17,6 +17,8 @@ opt-level = 3
 
 [dependencies]
 bevy = "0.11.2"
+bevy-inspector-egui = "0.20.0"
+bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls.git"}
 bracket-noise = "0.8.7"
 clap = { version = "4.4.6", features = ["derive"] }
 colored = "2.0.4"

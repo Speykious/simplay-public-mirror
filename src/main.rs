@@ -12,10 +12,10 @@ mod places;
 mod log;
 mod cli;
 mod hash;
+mod editor_mode;
 
 use std::env;
 use bevy::prelude::*;
-use bevy::pbr::wireframe::*;
 use bevy::render::render_resource::WgpuFeatures;
 use bevy::render::settings::WgpuSettings;
 use bevy::render::RenderPlugin;
@@ -24,6 +24,7 @@ use clap::Parser;
 
 use chunk::*;
 use block::*;
+use editor_mode::EditorModePlugin;
 
 macro_rules! run_exit_code_function {
     (
@@ -85,22 +86,13 @@ fn app() -> ExitCode {
             }
         ).set(
             ImagePlugin::default_nearest()
-        ), WireframePlugin))
+        ), EditorModePlugin))
         .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.3)))
-        .add_systems(Startup, setup)
         .add_systems(Startup, spawn_camera)
         .add_systems(Startup, spawn_random_shit)
         .run();
 
     return ExitCode::Success;
-}
-
-fn setup(
-    mut wireframe_config: ResMut<WireframeConfig>,
-) {
-    let args = cli::Cli::parse();
-
-    wireframe_config.global = args.wireframe;
 }
 
 fn spawn_random_shit(
