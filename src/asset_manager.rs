@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 
 use std::io;
+use std::sync::mpsc;
 use clap::*;
 use serde::{Serialize, Deserialize};
 use colored::Colorize;
 use hashbrown::HashMap;
 use image::{DynamicImage, ImageBuffer, Rgba};
+use rayon::prelude::*;
 use crate::places;
 use crate::log;
 use crate::log::macro_deps::*;
@@ -407,15 +409,11 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
         .filter(|x| x.path_type() == PathType::File)
         .collect();
 
-    let mut files_checksum_vec: Vec<String> = Vec::new();
+    let (tx, rx) = mpsc::channel();
 
-    for i in files.iter() {
-        files_checksum_vec.push(match hash::file(&i) {
-            Ok(o) => o,
-            Err(e) => return Err(e),
-        });
-    }
+    files.par_iter().for_each_with(tx, |tx, i| tx.send(hash::file(&i).unwrap()).unwrap());
 
+    let mut files_checksum_vec: Vec<String> = rx.iter().collect();
     files_checksum_vec.sort();
 
     let mut files_checksum = String::new();
