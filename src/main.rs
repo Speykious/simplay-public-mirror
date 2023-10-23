@@ -14,6 +14,7 @@ mod cli;
 mod hash;
 mod editor_mode;
 mod world_generation;
+mod chunk_manager;
 
 use std::env;
 use bevy::prelude::*;
@@ -26,6 +27,7 @@ use clap::Parser;
 use chunk::*;
 use block::*;
 use editor_mode::EditorModePlugin;
+use chunk_manager::ChunkManagerPlugin;
 
 macro_rules! run_exit_code_function {
     (
@@ -87,8 +89,9 @@ fn app() -> ExitCode {
             }
         ).set(
             ImagePlugin::default_nearest()
-        ), EditorModePlugin))
+        ), EditorModePlugin, ChunkManagerPlugin))
         .insert_resource(ClearColor(Color::rgb(0.3, 0.3, 0.3)))
+        .insert_resource(Msaa::Off)
         .add_systems(Startup, spawn_camera)
         .add_systems(Startup, spawn_random_shit)
         .run();
