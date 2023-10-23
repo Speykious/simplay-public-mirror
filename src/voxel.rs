@@ -7,6 +7,8 @@ use crate::filesystem::*;
 use crate::places;
 use crate::asset_manager::{AtlasUVMapElement, BlockAtlasInfo};
 
+const ATLAS_PIXEL_CROP: f32 = 0.0;
+
 pub struct Voxel {
     pub block: BlockType,
     pub position: (u8, u8, u8),
@@ -87,11 +89,11 @@ impl Voxel {
 
         let indices = vec![0, 1, 2, 2, 3, 0];
 
-        let uv_locate_info_1: (u32, u32) = uv_mod.corner; // Top left.
+        let uv_locate_info_1: (u32, u32) = (uv_mod.corner.0, uv_mod.corner.1); // Top left.
         let uv_locate_info_2: (u32, u32) = (uv_locate_info_1.0 + uv_mod.size.0, uv_locate_info_1.1 + uv_mod.size.1); // Bottom right.
 
-        let uv_limits_x: (f32, f32) = (uv_locate_info_1.0 as f32 / atlas_size.0 as f32, uv_locate_info_2.0 as f32 / atlas_size.0 as f32);
-        let uv_limits_y: (f32, f32) = (uv_locate_info_1.1 as f32 / atlas_size.1 as f32, uv_locate_info_2.1 as f32 / atlas_size.1 as f32);
+        let uv_limits_x: (f32, f32) = ((uv_locate_info_1.0 as f32 + ATLAS_PIXEL_CROP) / atlas_size.0 as f32, (uv_locate_info_2.0 as f32 - ATLAS_PIXEL_CROP * 1.0) / atlas_size.0 as f32);
+        let uv_limits_y: (f32, f32) = ((uv_locate_info_1.1 as f32 + ATLAS_PIXEL_CROP) / atlas_size.1 as f32, (uv_locate_info_2.1 as f32 - ATLAS_PIXEL_CROP * 1.0) / atlas_size.1 as f32);
 
         let mut general: Vec<([f32; 3], [f32; 3], [f32; 2])> = Vec::new();
 

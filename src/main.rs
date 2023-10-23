@@ -139,6 +139,8 @@ fn spawn_random_shit(
         }
     }
 
+    chunk.set_block_u8((0, 0, 0), BlockType::Diamond);
+
     let chunk_mesh = chunk.mesh();
 
     cmds.spawn(

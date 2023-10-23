@@ -11,6 +11,7 @@ pub enum BlockType {
     Grass,
     Dirt,
     Stone,
+    Diamond,
 }
 
 impl BlockType {
@@ -56,6 +57,16 @@ impl BlockType {
                 collision: BlockCollisionType::Solid,
                 textures: BlockTextures::new([
                     Some("stone"); 6
+                ]),
+                transparent: false,
+                ..BlockProperties::default()
+            },
+
+            BlockType::Diamond => BlockProperties {
+                name: "Diamond Block".into(),
+                collision: BlockCollisionType::Solid,
+                textures: BlockTextures::new([
+                    Some("diamond"); 6
                 ]),
                 transparent: false,
                 ..BlockProperties::default()
