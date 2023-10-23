@@ -126,7 +126,7 @@ fn spawn_random_shit(
                 let a = world_generation::regular(x as isize, y as isize, z as isize);
 
                 if a > 25.0 {
-                    chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Dirt, BlockType::Stone]));
+                    chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Dirt, BlockType::Stone, BlockType::Diamond]));
                 }
             }
         }
@@ -136,7 +136,7 @@ fn spawn_random_shit(
         for y in 0..CHUNK_SIZE.1 {
             for z in 0..CHUNK_SIZE.2 {
                 if chunk.get_block_u8((x, y + 1, z)) == BlockType::Air && chunk.get_block_u8((x, y, z)) != BlockType::Air {
-                    chunk.set_block_u8((x, y, z), BlockType::Grass)
+                    chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Grass, BlockType::Dirt]))
                 }
             }
         }
