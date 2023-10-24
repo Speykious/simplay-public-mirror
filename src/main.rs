@@ -155,6 +155,8 @@ fn spawn_random_shit(
                 base_color_texture: Some(asset_server.load(format!("{}/block_atlas.png", places::custom_built_assets().to_string()))),
                 // double_sided: true, // debug
                 // cull_mode: None, // debug
+                reflectance: 0.15,
+                perceptual_roughness: 0.6,
                 ..default()
             }),
             ..default()
