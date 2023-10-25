@@ -113,7 +113,7 @@ fn spawn_random_shit(
                 range: 5000.0,
                 ..default()
             },
-            transform: Transform::from_xyz(-30.0, 30.0, 30.0),
+            transform: Transform::from_xyz(-12.0, 39.0, 40.0),
             ..default()
         }
     );

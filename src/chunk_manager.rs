@@ -1,16 +1,33 @@
 #![allow(dead_code)]
 
+use std::sync::Arc;
 use bevy::prelude::*;
+use hashbrown::HashMap;
 
 use crate::chunk::*;
 use crate::block::*;
 use crate::places;
+use crate::world;
 
 pub struct ChunkManagerPlugin;
 
 impl Plugin for ChunkManagerPlugin {
     fn build(&self, app: &mut App) {
+        app.insert_resource(ChunkManager::new());
         app.add_systems(Startup, test_chunks);
+    }
+}
+
+#[derive(Resource)]
+struct ChunkManager {
+    chunks: HashMap<(isize, isize, isize), Arc<Chunk>>,
+}
+
+impl ChunkManager {
+    fn new() -> Self {
+        return Self {
+            chunks: HashMap::new(),
+        };
     }
 }
 
@@ -18,6 +35,7 @@ fn test_chunks(
     mut cmds: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut chunk_manager: ResMut<ChunkManager>,
     asset_server: ResMut<AssetServer>,
 ) {
     for cx in 0..2 {
@@ -30,6 +48,14 @@ fn test_chunks(
                         for z in 0..CHUNK_SIZE.2 {
                             chunk.set_block_u8((x, y, z), BlockType::Dirt);
                         }
+                    }
+                }
+
+                for a in world::Direction::all() {
+                    let offset = a.offset_with_position((cx, cy, cz));
+
+                    if chunk_manager.chunks.contains_key(&offset) {
+                        chunk.add_neighbor(a, Arc::downgrade(&chunk_manager.chunks.get(&offset).unwrap().clone()));
                     }
                 }
 
@@ -49,6 +75,10 @@ fn test_chunks(
                         ..default()
                     }, Name::new(format!("Chunk ({}, {}, {})", cx, cy, cz))
                 ));
+
+                let chunk_ref = Arc::new(chunk);
+
+                chunk_manager.chunks.insert((cx, cy, cz), chunk_ref);
             }
         }
     }
