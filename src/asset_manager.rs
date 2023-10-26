@@ -411,7 +411,7 @@ fn asset_packs_checksum() -> Result<String, io::Error> {
 
     let (tx, rx) = mpsc::channel();
 
-    files.par_iter().for_each_with(tx, |tx, i| tx.send(hash::file(&i).unwrap()).unwrap());
+    files.par_iter().for_each_with(tx, |tx, i| tx.send(hash::sha256::file(&i).unwrap()).unwrap());
 
     let mut files_checksum_vec: Vec<String> = rx.iter().collect();
     files_checksum_vec.sort();

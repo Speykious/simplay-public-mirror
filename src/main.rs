@@ -12,6 +12,7 @@ mod places;
 mod log;
 mod cli;
 mod hash;
+mod hash_boilerplate;
 mod editor_mode;
 mod world_generation;
 mod chunk_manager;
