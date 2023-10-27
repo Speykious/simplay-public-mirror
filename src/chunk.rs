@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, Weak, RwLock};
 use bevy::prelude::*;
 use hashbrown::HashMap;
 
@@ -19,7 +19,7 @@ pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 pub struct Chunk {
     blocks: HashMap<(i8, i8, i8), BlockType>, // The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
     cpos: (isize, isize, isize), // Chunk position.
-    neighbors: HashMap<world::Direction, Weak<Self>>, // Neighbors.
+    neighbors: HashMap<world::Direction, Weak<RwLock<Self>>>, // Neighbors.
 }
 
 impl Chunk {
@@ -32,18 +32,18 @@ impl Chunk {
     }
 
     // Set the neighbor.
-    pub fn set_neighbor(&mut self, direction: world::Direction, chunk: Weak<Self>) {
+    pub fn set_neighbor(&mut self, direction: world::Direction, chunk: Weak<RwLock<Self>>) {
         self.neighbors.insert(direction, chunk);
     }
 
     // Set the neighbor if it doesn't exist yet.
-    pub fn add_neighbor(&mut self, direction: world::Direction, chunk: Weak<Self>) {
+    pub fn add_neighbor(&mut self, direction: world::Direction, chunk: Weak<RwLock<Self>>) {
         if self.neighbors.contains_key(&direction) == false {
             self.set_neighbor(direction, chunk);
         }
     }
 
-    pub fn get_neighbor(&self, direction: world::Direction) -> Option<Arc<Self>> {
+    pub fn get_neighbor(&self, direction: world::Direction) -> Option<Arc<RwLock<Self>>> {
         return match self.neighbors.get(&direction) {
             Some(s) => Some(s.upgrade().unwrap()),
             None => None,
@@ -137,6 +137,8 @@ impl Chunk {
                 Some(s) => s,
                 None => return BlockType::Air,
             };
+
+            let neighbor = neighbor.read().unwrap();
 
             let wrap_pos = Self::wrap_position(position);
 

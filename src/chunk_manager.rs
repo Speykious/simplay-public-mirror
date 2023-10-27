@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use bevy::prelude::*;
 use hashbrown::HashMap;
 
@@ -20,7 +20,7 @@ impl Plugin for ChunkManagerPlugin {
 
 #[derive(Resource)]
 struct ChunkManager {
-    chunks: HashMap<(isize, isize, isize), Arc<Chunk>>,
+    chunks: HashMap<(isize, isize, isize), Arc<RwLock<Chunk>>>,
 }
 
 impl ChunkManager {
@@ -55,7 +55,9 @@ fn test_chunks(
                     let offset = a.offset_with_position((cx, cy, cz));
 
                     if chunk_manager.chunks.contains_key(&offset) {
-                        chunk.add_neighbor(a, Arc::downgrade(&chunk_manager.chunks.get(&offset).unwrap().clone()));
+                        let neighbor = chunk_manager.chunks.get(&offset).unwrap();
+
+                        chunk.add_neighbor(a, Arc::downgrade(neighbor));
                     }
                 }
 
@@ -76,9 +78,7 @@ fn test_chunks(
                     }, Name::new(format!("Chunk ({}, {}, {})", cx, cy, cz))
                 ));
 
-                let chunk_ref = Arc::new(chunk);
-
-                chunk_manager.chunks.insert((cx, cy, cz), chunk_ref);
+                chunk_manager.chunks.insert((cx, cy, cz), Arc::new(RwLock::new(chunk)));
             }
         }
     }
