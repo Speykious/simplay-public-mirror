@@ -53,7 +53,7 @@ fn main() {
 }
 
 fn macos_fix() {
-    env::set_var("WGPU_BACKEND", "gles");
+    env::set_var("WGPU_BACKEND", "metal");
 }
 
 fn app() -> ExitCode {
