@@ -190,9 +190,18 @@ fn open_image(path: &Path) -> Result<DynamicImage, io::Error> {
 
 // Build all the user's asset packs into one singular asset pack.
 fn build_unified_asset_links() -> Result<(), io::Error> {
-    let order: PackOrder = match toml::from_str(file::read(&Path::new(&format!("{}/order.toml", places::asset_packs().to_string())))?.as_str()) {
+    let order: PackOrder = match toml::from_str(match file::read(&Path::new(&format!("{}/order.toml", places::asset_packs().to_string()))) {
+        Ok(o) => o,
+        Err(e) => {
+            log::error!("Failed to read contents of order.toml, does it exist?");
+
+            return Err(e);
+        },
+    }.as_str()) {
         Ok(o) => o,
         Err(_) => {
+            log::error!("Failed to parse order.toml, does it contain the right contents?");
+
             return Err(io::Error::new(io::ErrorKind::Other, "Failed to parse TOML for pack order!"))
         },
     };
