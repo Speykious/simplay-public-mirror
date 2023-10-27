@@ -26,7 +26,7 @@ pub struct Cli {
     /// Use the debug editor?
     pub editor: bool,
 
-    #[clap(long)]
-    /// Enable fixes for MacOS?
-    pub macos_fix: bool,
+    #[clap(short, long)]
+    /// Set the backend for Wgpu
+    pub wgpu_backend: Option<String>,
 }
