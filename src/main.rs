@@ -25,8 +25,7 @@ use bevy::render::RenderPlugin;
 use bevy::log::LogPlugin;
 use clap::Parser;
 
-use chunk::*;
-use block::*;
+use chunk::CHUNK_SIZE;
 use editor_mode::EditorModePlugin;
 use chunk_manager::ChunkManagerPlugin;
 
@@ -114,55 +113,55 @@ fn spawn_random_shit(
                 range: 5000.0,
                 ..default()
             },
-            transform: Transform::from_xyz(-12.0, 39.0, 40.0),
+            transform: Transform::from_xyz(-25.0, 39.0, 40.0),
             ..default()
         }
     );
 
-    let mut chunk = Chunk::new((0, 0, 0));
+    // let mut chunk = Chunk::new((0, 0, 0));
 
-    for x in 0..CHUNK_SIZE.0 {
-        for y in 0..CHUNK_SIZE.1 {
-            for z in 0..CHUNK_SIZE.2 {
-                let a = world_generation::regular(x as isize, y as isize, z as isize);
+    // for x in 0..CHUNK_SIZE.0 {
+    //     for y in 0..CHUNK_SIZE.1 {
+    //         for z in 0..CHUNK_SIZE.2 {
+    //             let a = world_generation::regular(x as isize, y as isize, z as isize);
 
-                if a > 25.0 {
-                    chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Dirt, BlockType::Stone, BlockType::Diamond]));
-                }
-            }
-        }
-    }
+    //             if a > 25.0 {
+    //                 chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Dirt, BlockType::Stone, BlockType::Diamond]));
+    //             }
+    //         }
+    //     }
+    // }
 
-    for x in 0..CHUNK_SIZE.0 {
-        for y in 0..CHUNK_SIZE.1 {
-            for z in 0..CHUNK_SIZE.2 {
-                if chunk.get_block_u8((x, y + 1, z)) == BlockType::Air && chunk.get_block_u8((x, y, z)) != BlockType::Air {
-                    chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Grass, BlockType::Dirt]))
-                }
-            }
-        }
-    }
+    // for x in 0..CHUNK_SIZE.0 {
+    //     for y in 0..CHUNK_SIZE.1 {
+    //         for z in 0..CHUNK_SIZE.2 {
+    //             if chunk.get_block_u8((x, y + 1, z)) == BlockType::Air && chunk.get_block_u8((x, y, z)) != BlockType::Air {
+    //                 chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Grass, BlockType::Dirt]))
+    //             }
+    //         }
+    //     }
+    // }
 
-    chunk.set_block_u8((0, 0, 0), BlockType::Diamond);
+    // chunk.set_block_u8((0, 0, 0), BlockType::Diamond);
 
-    let chunk_mesh = chunk.mesh();
+    // let chunk_mesh = chunk.mesh();
 
-    cmds.spawn(
-        PbrBundle {
-            mesh: meshes.add(chunk_mesh),
-            transform: Transform::from_xyz(0.0, 0.0, 0.0),
-            material: materials.add(StandardMaterial {
-                // base_color: Color::rgb(0.05, 0.5, 0.35),
-                base_color_texture: Some(asset_server.load(format!("{}/block_atlas.png", places::custom_built_assets().to_string()))),
-                // double_sided: true, // debug
-                // cull_mode: None, // debug
-                reflectance: 0.15,
-                perceptual_roughness: 0.6,
-                ..default()
-            }),
-            ..default()
-        }
-    );
+    // cmds.spawn(
+    //     PbrBundle {
+    //         mesh: meshes.add(chunk_mesh),
+    //         transform: Transform::from_xyz(0.0, 0.0, 0.0),
+    //         material: materials.add(StandardMaterial {
+    //             // base_color: Color::rgb(0.05, 0.5, 0.35), // The only reason this is still here, is because I think it is a cool color, and it is a secret comment!
+    //             base_color_texture: Some(asset_server.load(format!("{}/block_atlas.png", places::custom_built_assets().to_string()))),
+    //             // double_sided: true, // debug
+    //             // cull_mode: None, // debug
+    //             reflectance: 0.15,
+    //             perceptual_roughness: 0.6,
+    //             ..default()
+    //         }),
+    //         ..default()
+    //     }
+    // );
 
     cmds.spawn(
         PbrBundle {
@@ -198,8 +197,8 @@ fn spawn_random_shit(
 fn spawn_camera(mut cmds: Commands) {
     cmds.spawn(
         Camera3dBundle {
-            transform: Transform::from_xyz(-8.0, CHUNK_SIZE.1 as f32 * 0.5, 8.0)
-                .looking_at(Vec3::new(CHUNK_SIZE.0 as f32 * 0.5, CHUNK_SIZE.1 as f32 * 0.5, CHUNK_SIZE.2 as f32 * 0.5), Vec3::Y),
+            transform: Transform::from_xyz(-41.0, 8.0, 7.0)
+                .looking_at(Vec3::new(0.0, 8.0, 7.0), Vec3::Y),
             ..default()
         }
     );
