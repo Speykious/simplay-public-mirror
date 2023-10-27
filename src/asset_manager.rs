@@ -204,6 +204,7 @@ fn build_unified_asset_links() -> Result<(), io::Error> {
         let pack_info_path = Path::new(&format!("{}/pack.toml", pack_path.to_string()));
 
         if pack_path.exists() == false {
+            // Just like when your dad went to go get the milk, and you were powerless to stop him.
             log::error!("Pack non-existant: {} (Skipping...)", i);
 
             continue;

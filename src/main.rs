@@ -118,51 +118,6 @@ fn spawn_random_shit(
         }
     );
 
-    // let mut chunk = Chunk::new((0, 0, 0));
-
-    // for x in 0..CHUNK_SIZE.0 {
-    //     for y in 0..CHUNK_SIZE.1 {
-    //         for z in 0..CHUNK_SIZE.2 {
-    //             let a = world_generation::regular(x as isize, y as isize, z as isize);
-
-    //             if a > 25.0 {
-    //                 chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Dirt, BlockType::Stone, BlockType::Diamond]));
-    //             }
-    //         }
-    //     }
-    // }
-
-    // for x in 0..CHUNK_SIZE.0 {
-    //     for y in 0..CHUNK_SIZE.1 {
-    //         for z in 0..CHUNK_SIZE.2 {
-    //             if chunk.get_block_u8((x, y + 1, z)) == BlockType::Air && chunk.get_block_u8((x, y, z)) != BlockType::Air {
-    //                 chunk.set_block_u8((x, y, z), random::choice(&vec![BlockType::Grass, BlockType::Dirt]))
-    //             }
-    //         }
-    //     }
-    // }
-
-    // chunk.set_block_u8((0, 0, 0), BlockType::Diamond);
-
-    // let chunk_mesh = chunk.mesh();
-
-    // cmds.spawn(
-    //     PbrBundle {
-    //         mesh: meshes.add(chunk_mesh),
-    //         transform: Transform::from_xyz(0.0, 0.0, 0.0),
-    //         material: materials.add(StandardMaterial {
-    //             // base_color: Color::rgb(0.05, 0.5, 0.35), // The only reason this is still here, is because I think it is a cool color, and it is a secret comment!
-    //             base_color_texture: Some(asset_server.load(format!("{}/block_atlas.png", places::custom_built_assets().to_string()))),
-    //             // double_sided: true, // debug
-    //             // cull_mode: None, // debug
-    //             reflectance: 0.15,
-    //             perceptual_roughness: 0.6,
-    //             ..default()
-    //         }),
-    //         ..default()
-    //     }
-    // );
-
     cmds.spawn(
         PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),

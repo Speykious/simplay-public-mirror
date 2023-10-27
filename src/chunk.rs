@@ -9,16 +9,12 @@ use crate::voxel::*;
 use crate::world;
 use crate::mesher;
 
-// ==== DEBUG ====
-const GREEDY_MESHING: bool = false;
-// ===============
-
 pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
 
 #[derive(Debug)]
 pub struct Chunk {
+    pub cpos: (isize, isize, isize), // Chunk position.
     blocks: HashMap<(i8, i8, i8), BlockType>, // The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
-    cpos: (isize, isize, isize), // Chunk position.
     neighbors: HashMap<world::Direction, Weak<RwLock<Self>>>, // Neighbors.
 }
 
@@ -98,6 +94,12 @@ impl Chunk {
             return true;
         } else {
             return false;
+        }
+    }
+
+    pub fn set_all_blocks_from_hashmap(&mut self, blocks: HashMap<(i8, i8, i8), BlockType>) {
+        for (k, v) in blocks.iter() {
+            self.set_block(*k, *v);
         }
     }
 
@@ -204,5 +206,33 @@ impl Chunk {
         }
 
         return false;
+    }
+
+    pub fn pos_local_to_global(&self, x: u8, y: u8, z: u8) -> (isize, isize, isize) {
+        let global_pos: (isize, isize, isize) = (
+            self.pos_local_to_global_single(x, world::Axis::X),
+            self.pos_local_to_global_single(y, world::Axis::Y),
+            self.pos_local_to_global_single(z, world::Axis::Z)
+        );
+
+        return global_pos;
+    }
+
+    pub fn pos_local_to_global_single(&self, s: u8, coord_type: world::Axis) -> isize {
+        let csize = match coord_type {
+            world::Axis::X => CHUNK_SIZE.0,
+            world::Axis::Y => CHUNK_SIZE.1,
+            world::Axis::Z => CHUNK_SIZE.2,
+        };
+
+        let cpos = match coord_type {
+            world::Axis::X => self.cpos.0,
+            world::Axis::Y => self.cpos.1,
+            world::Axis::Z => self.cpos.2,
+        };
+
+        let global_s: isize = (cpos * csize as isize) + s as isize;
+
+        return global_s;
     }
 }

@@ -7,9 +7,9 @@ use bevy::prelude::*;
 use hashbrown::HashMap;
 
 use crate::chunk::*;
-use crate::block::*;
 use crate::places;
 use crate::world;
+use crate::world_generation;
 
 pub struct ChunkManagerPlugin;
 
@@ -47,13 +47,7 @@ fn test_chunks(
             for cz in xyz_ranges.2.clone() {
                 let mut chunk = Chunk::new((cx, cy, cz));
 
-                for x in 0..CHUNK_SIZE.0 {
-                    for y in 0..CHUNK_SIZE.1 {
-                        for z in 0..CHUNK_SIZE.2 {
-                            chunk.set_block_u8((x, y, z), BlockType::Dirt);
-                        }
-                    }
-                }
+                world_generation::regular(&mut chunk);
 
                 chunk_manager.chunks.insert((cx, cy, cz), Arc::new(RwLock::new(chunk)));
             }

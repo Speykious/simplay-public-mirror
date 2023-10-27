@@ -40,7 +40,7 @@ impl NoiseSettings {
     }
 }
 
-pub fn noise_3d(position: (f32, f32, f32), seed: u64, ns: NoiseSettings) -> f32 {
+pub fn noise_3d(position: (f32, f32, f32), seed: u64, ns: &NoiseSettings) -> f32 {
     let mut noise = FastNoise::seeded(seed);
 
     noise.set_noise_type(ns.ntype);

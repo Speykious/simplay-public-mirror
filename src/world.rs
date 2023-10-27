@@ -1,6 +1,13 @@
 #![allow(dead_code)]
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+pub enum Axis {
+    X,
+    Y,
+    Z,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum Direction {
     North,
     South,
