@@ -1,4 +1,4 @@
-[ ] >> Make sure there is not memory leak with the Arc and Weak pointers in chunk.rs, and chunk_manager.rs!
+[*] >> Make sure there is not memory leak with the Arc and Weak pointers in chunk.rs, and chunk_manager.rs!
 [*] >> Make filesystem.rs functions use &Path instead of Path, to avoid needless .clone() methods.
 [*] >> Actually implement code for the asset_manager module.
 [*] >> Fix vertex sharing code! (Hint: causes weird rendering issues on blocks with a 0 in their position.)
