@@ -25,4 +25,8 @@ pub struct Cli {
     #[clap(short, long)]
     /// Use the debug editor?
     pub editor: bool,
+
+    #[clap(long)]
+    /// Enable fixes for MacOS?
+    pub macos_fix: bool,
 }

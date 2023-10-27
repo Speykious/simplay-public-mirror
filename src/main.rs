@@ -52,8 +52,16 @@ fn main() {
     }
 }
 
+fn macos_fix() {
+    env::set_var("WGPU_BACKEND", "gles");
+}
+
 fn app() -> ExitCode {
     let args = cli::Cli::parse();
+
+    if args.macos_fix {
+        macos_fix();
+    }
 
     env::set_var("BEVY_ASSET_ROOT", places::cache().to_string());
 
