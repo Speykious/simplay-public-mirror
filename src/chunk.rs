@@ -66,6 +66,82 @@ impl BlockPos {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+struct BlockOffset {
+    pub x: i8,
+    pub y: i8,
+    pub z: i8,
+}
+
+impl BlockOffset {
+    pub const fn new(x: i8, y: i8, z: i8) -> Self {
+        Self { x, y, z }
+    }
+
+    pub fn full_pos(&self, chunk_pos: ChunkPos) -> (ChunkPos, BlockPos) {
+        let overflow_directions = self.overflow_direction();
+
+        let mut d_chunk_pos = chunk_pos;
+        for overflow_direction in overflow_directions {
+            match overflow_direction {
+                world::Direction::North => d_chunk_pos.z -= 1,
+                world::Direction::South => d_chunk_pos.z += 1,
+                world::Direction::East => d_chunk_pos.x += 1,
+                world::Direction::West => d_chunk_pos.x -= 1,
+                world::Direction::Up => d_chunk_pos.y += 1,
+                world::Direction::Down => d_chunk_pos.y -= 1,
+            }
+        }
+
+        (d_chunk_pos, self.wrap())
+    }
+
+    // Wrap an overflowing position to a regular position.
+    pub fn wrap(&self) -> BlockPos {
+        let x: u8 = self.x.rem_euclid(CHUNK_SIZE.x as i8) as u8;
+        let y: u8 = self.y.rem_euclid(CHUNK_SIZE.y as i8) as u8;
+        let z: u8 = self.z.rem_euclid(CHUNK_SIZE.z as i8) as u8;
+
+        BlockPos::new_unchecked(x, y, z)
+    }
+
+    // What direction does a position overflow in?
+    pub fn overflow_direction(&self) -> Vec<world::Direction> {
+        let mut directions: Vec<world::Direction> = Vec::new();
+
+        if self.position_overflow().not() {
+            return directions;
+        }
+
+        if self.x < 0 {
+            directions.push(world::Direction::West);
+        } else if self.x > (CHUNK_SIZE.x - 1) as i8 {
+            directions.push(world::Direction::East);
+        }
+
+        if self.y < 0 {
+            directions.push(world::Direction::Down);
+        } else if self.y > (CHUNK_SIZE.y - 1) as i8 {
+            directions.push(world::Direction::Up);
+        }
+
+        if self.z < 0 {
+            directions.push(world::Direction::North);
+        } else if self.z > (CHUNK_SIZE.z - 1) as i8 {
+            directions.push(world::Direction::South);
+        }
+
+        directions
+    }
+
+    // Is a position outside of a chunk?
+    pub fn position_overflow(&self) -> bool {
+        (self.x < 0 || self.x >= CHUNK_SIZE.x as i8)
+            || (self.y < 0 || self.y >= CHUNK_SIZE.y as i8)
+            || (self.z < 0 || self.z >= CHUNK_SIZE.z as i8)
+    }
+}
+
 #[derive(Debug)]
 pub struct Chunk {
     /// Chunk position.
@@ -148,51 +224,6 @@ impl Chunk {
         }
     }
 
-    // Wrap an overflowing position to a regular position.
-    pub fn wrap_position(position: (i8, i8, i8)) -> (u8, u8, u8) {
-        let x: u8 = position.0.rem_euclid(CHUNK_SIZE.x as i8) as u8;
-        let y: u8 = position.1.rem_euclid(CHUNK_SIZE.y as i8) as u8;
-        let z: u8 = position.2.rem_euclid(CHUNK_SIZE.z as i8) as u8;
-
-        (x, y, z)
-    }
-
-    // What direction does a position overflow in?
-    pub fn position_overflow_direction(position: (i8, i8, i8)) -> Option<Vec<world::Direction>> {
-        if Self::position_overflow(position).not() {
-            return None;
-        }
-
-        let mut directions: Vec<world::Direction> = Vec::new();
-
-        if position.0 < 0 {
-            directions.push(world::Direction::West);
-        } else if position.0 > (CHUNK_SIZE.x - 1) as i8 {
-            directions.push(world::Direction::East);
-        }
-
-        if position.1 < 0 {
-            directions.push(world::Direction::Down);
-        } else if position.1 > (CHUNK_SIZE.y - 1) as i8 {
-            directions.push(world::Direction::Up);
-        }
-
-        if position.2 < 0 {
-            directions.push(world::Direction::North);
-        } else if position.2 > (CHUNK_SIZE.z - 1) as i8 {
-            directions.push(world::Direction::South);
-        }
-
-        Some(directions)
-    }
-
-    // Is a position outside of a chunk?
-    pub fn position_overflow(position: (i8, i8, i8)) -> bool {
-        (position.0 < 0 || position.0 >= CHUNK_SIZE.x as i8)
-        || (position.1 < 0 || position.1 >= CHUNK_SIZE.y as i8)
-        || (position.2 < 0 || position.2 >= CHUNK_SIZE.z as i8)
-    }
-
     pub fn pos_local_to_global(&self, block_pos: BlockPos) -> (isize, isize, isize) {
         (
             self.pos_local_to_global_single(block_pos.x, world::Axis::X),
@@ -232,8 +263,46 @@ impl ChunkManager {
         }
     }
 
-    pub fn get_block(&self, chunk: &Chunk, block_pos: BlockPos) -> BlockType {
-        chunk.get_block(block_pos)
+    pub fn mesh(&self, chunk_pos: ChunkPos) -> Mesh {
+        let chunk = self.chunks.get(&chunk_pos).unwrap();
+
+        // Voxels store data like what sides need to be drawn.
+        let mut voxels: Vec<Voxel> = Vec::new();
+
+        // Loop through every block in the chunk.
+        for x in 0..CHUNK_SIZE.x {
+            for y in 0..CHUNK_SIZE.y {
+                for z in 0..CHUNK_SIZE.z {
+                    let ibp = BlockPos::new_unchecked(x, y, z);
+
+                    let block = chunk.get_block(ibp);
+
+                    let mut voxel_data = Voxel::new((x, y, z), block);
+
+                    // Loop through all the neighboring blocks, and check if a face should be drawn.
+                    for d in world::Direction::all() {
+                        let (dx, dy, dz) =
+                            d.offset_with_position((x as isize, y as isize, z as isize)); // Returns isizes.
+
+                        let d_offset = BlockOffset::new(dx as i8, dy as i8, dz as i8);
+                        let (d_chunk_pos, dbp) = d_offset.full_pos(chunk_pos);
+
+                        let d_chunk = self.chunks.get(&d_chunk_pos).unwrap();
+                        let d_block = d_chunk.get_block(dbp);
+
+                        if Chunk::is_face(block, d_block) {
+                            voxel_data.enable_side(d);
+                        }
+                    }
+
+                    voxels.push(voxel_data);
+                }
+            }
+        }
+
+        let (mesh_data, indices) = mdi_from::voxel_array(&voxels);
+
+        mesher::create_mesh(&mesh_data, &indices)
     }
 }
 
