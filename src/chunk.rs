@@ -1,49 +1,85 @@
 #![allow(dead_code)]
 
-use std::sync::{Arc, Weak, RwLock};
 use bevy::prelude::*;
 use hashbrown::HashMap;
+use std::ops::Not;
+use std::ops::Range;
+use std::rc::Rc;
 
-use crate::block::*;
-use crate::voxel::*;
-use crate::world;
+use crate::block::BlockType;
 use crate::mesher;
+use crate::places;
+use crate::voxel::mdi_from;
+use crate::voxel::Voxel;
+use crate::world;
+use crate::world_generation;
 
-pub const CHUNK_SIZE: (u8, u8, u8) = (16, 16, 16);
+pub struct ChunkManagerPlugin;
+
+impl Plugin for ChunkManagerPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ChunkManager::new());
+        app.add_systems(Startup, test_chunks);
+    }
+}
+
+pub const CHUNK_SIZE: BlockPos = BlockPos::new_unchecked(16, 16, 16);
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ChunkPos {
+    pub x: isize,
+    pub y: isize,
+    pub z: isize,
+}
+
+impl ChunkPos {
+    pub const fn new(x: isize, y: isize, z: isize) -> Self {
+        Self { x, y, z }
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct BlockPos {
+    pub x: u8,
+    pub y: u8,
+    pub z: u8,
+}
+
+impl BlockPos {
+    pub const fn new(x: u8, y: u8, z: u8) -> Option<Self> {
+        let pos = Self { x, y, z };
+
+        if pos.overflows_chunk() {
+            return None;
+        }
+
+        Some(pos)
+    }
+
+    pub const fn new_unchecked(x: u8, y: u8, z: u8) -> Self {
+        Self { x, y, z }
+    }
+
+    /// Is the position outside of a chunk?
+    pub const fn overflows_chunk(&self) -> bool {
+        self.x > CHUNK_SIZE.x || self.y > CHUNK_SIZE.y || self.z > CHUNK_SIZE.z
+    }
+}
 
 #[derive(Debug)]
 pub struct Chunk {
-    pub cpos: (isize, isize, isize), // Chunk position.
-    blocks: HashMap<(i8, i8, i8), BlockType>, // The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
-    neighbors: HashMap<world::Direction, Weak<RwLock<Self>>>, // Neighbors.
+    /// Chunk position.
+    pub pos: ChunkPos,
+    /// The reason that I am using i8 instead of u8, is so I can read the blocks of neighboring chunks.
+    blocks: HashMap<BlockPos, BlockType>,
 }
 
 impl Chunk {
-    pub fn new(cpos: (isize, isize, isize)) -> Self {
-        return Self {
-            cpos,
+    pub fn new(pos: ChunkPos) -> Self {
+        Self {
+            pos,
             blocks: HashMap::new(),
-            neighbors: HashMap::new(),
-        };
-    }
-
-    // Set the neighbor.
-    pub fn set_neighbor(&mut self, direction: world::Direction, chunk: Weak<RwLock<Self>>) {
-        self.neighbors.insert(direction, chunk);
-    }
-
-    // Set the neighbor if it doesn't exist yet.
-    pub fn add_neighbor(&mut self, direction: world::Direction, chunk: Weak<RwLock<Self>>) {
-        if self.neighbors.contains_key(&direction) == false {
-            self.set_neighbor(direction, chunk);
         }
-    }
-
-    pub fn get_neighbor(&self, direction: world::Direction) -> Option<Arc<RwLock<Self>>> {
-        return match self.neighbors.get(&direction) {
-            Some(s) => Some(s.upgrade().unwrap()),
-            None => None,
-        };
     }
 
     pub fn mesh(&self) -> Mesh {
@@ -51,21 +87,22 @@ impl Chunk {
         let mut voxels: Vec<Voxel> = Vec::new();
 
         // Loop through every block in the chunk.
-        for x in 0..CHUNK_SIZE.0 {
-            for y in 0..CHUNK_SIZE.1 {
-                for z in 0..CHUNK_SIZE.2 {
-                    let (ix, iy, iz) = (x as i8, y as i8, z as i8);
+        for x in 0..CHUNK_SIZE.x {
+            for y in 0..CHUNK_SIZE.y {
+                for z in 0..CHUNK_SIZE.z {
+                    let ibp = BlockPos::new_unchecked(x, y, z);
 
-                    let block = self.get_block((ix, iy, iz));
+                    let block = self.get_block(ibp);
 
                     let mut voxel_data = Voxel::new((x, y, z), block);
 
                     // Loop through all the neighboring blocks, and check if a face should be drawn.
                     for d in world::Direction::all() {
-                        let (dx, dy, dz) = d.offset_with_position((x as isize, y as isize, z as isize)); // Returns isizes.
-                        let (dx, dy, dz) = (dx as i8, dy as i8, dz as i8); // Convert to (i8, i8, i8).
+                        let (dx, dy, dz) =
+                            d.offset_with_position((x as isize, y as isize, z as isize)); // Returns isizes.
+                        let dbp = BlockPos::new_unchecked(dx as u8, dy as u8, dz as u8); // Convert to (i8, i8, i8).
 
-                        let d_block = self.get_block((dx, dy, dz));
+                        let d_block = self.get_block(dbp);
 
                         if Self::is_face(block, d_block) {
                             voxel_data.enable_side(d);
@@ -79,89 +116,50 @@ impl Chunk {
 
         let (mesh_data, indices) = mdi_from::voxel_array(&voxels);
 
-        return mesher::create_mesh(&mesh_data, &indices);
+        mesher::create_mesh(&mesh_data, &indices)
     }
 
     // Used in self.mesh() to check whether a block needs a face or not.
     fn is_face(block: BlockType, d_block: BlockType) -> bool {
-        if block.properties().transparent {
-            if block == d_block {
-                return false;
-            }
-        }
-
-        if d_block.properties().transparent {
-            return true;
-        } else {
+        if block.properties().transparent && block == d_block {
             return false;
         }
+
+        d_block.properties().transparent
     }
 
-    pub fn set_all_blocks_from_hashmap(&mut self, blocks: HashMap<(i8, i8, i8), BlockType>) {
-        for (k, v) in blocks.iter() {
-            self.set_block(*k, *v);
-        }
+    pub fn get_block(&self, block_pos: BlockPos) -> BlockType {
+        self.blocks
+            .get(&block_pos)
+            .copied()
+            .unwrap_or(BlockType::Air)
     }
 
-    pub fn set_block_u8(&mut self, position: (u8, u8, u8), blocktype: BlockType) {
-        self.set_block((position.0 as i8, position.1 as i8, position.2 as i8), blocktype);
-    }
-
-    pub fn set_block(&mut self, position: (i8, i8, i8), blocktype: BlockType) {
+    pub fn set_block(&mut self, position: BlockPos, blocktype: BlockType) {
         match blocktype {
             BlockType::Air => self.blocks.remove(&position),
             _ => self.blocks.insert(position, blocktype),
         };
     }
 
-    pub fn get_block_u8(&self, position: (u8, u8, u8)) -> BlockType {
-        return self.get_block((position.0 as i8, position.1 as i8, position.2 as i8));
-    }
-
-    pub fn get_block(&self, position: (i8, i8, i8)) -> BlockType {
-        if Self::position_overflow(position) == false {
-            return match self.blocks.get(&position) {
-                Some(s) => *s,
-                None => BlockType::Air,
-            };
-        }
-
-        else {
-            let directions = Self::position_overflow_direction(position).unwrap();
-
-            if directions.len() > 1 {
-                return BlockType::Air;
-            }
-
-            let direction: world::Direction = directions[0];
-
-            let neighbor = match self.get_neighbor(direction) {
-                Some(s) => s,
-                None => return BlockType::Air,
-            };
-
-            let neighbor = neighbor.read().unwrap();
-
-            let wrap_pos = Self::wrap_position(position);
-
-            let nblock = neighbor.get_block_u8(wrap_pos);
-
-            return nblock;
+    pub fn set_all_blocks_from_hashmap(&mut self, blocks: HashMap<BlockPos, BlockType>) {
+        for (k, v) in blocks.iter() {
+            self.set_block(*k, *v);
         }
     }
 
     // Wrap an overflowing position to a regular position.
     pub fn wrap_position(position: (i8, i8, i8)) -> (u8, u8, u8) {
-        let x: u8 = position.0.rem_euclid(CHUNK_SIZE.0 as i8) as u8;
-        let y: u8 = position.1.rem_euclid(CHUNK_SIZE.1 as i8) as u8;
-        let z: u8 = position.2.rem_euclid(CHUNK_SIZE.2 as i8) as u8;
+        let x: u8 = position.0.rem_euclid(CHUNK_SIZE.x as i8) as u8;
+        let y: u8 = position.1.rem_euclid(CHUNK_SIZE.y as i8) as u8;
+        let z: u8 = position.2.rem_euclid(CHUNK_SIZE.z as i8) as u8;
 
-        return (x, y, z);
+        (x, y, z)
     }
 
     // What direction does a position overflow in?
     pub fn position_overflow_direction(position: (i8, i8, i8)) -> Option<Vec<world::Direction>> {
-        if Self::position_overflow(position) == false {
+        if Self::position_overflow(position).not() {
             return None;
         }
 
@@ -169,70 +167,129 @@ impl Chunk {
 
         if position.0 < 0 {
             directions.push(world::Direction::West);
-        }
-
-        else if position.0 > (CHUNK_SIZE.0 - 1) as i8 {
+        } else if position.0 > (CHUNK_SIZE.x - 1) as i8 {
             directions.push(world::Direction::East);
         }
 
         if position.1 < 0 {
             directions.push(world::Direction::Down);
-        }
-
-        else if position.1 > (CHUNK_SIZE.1 - 1) as i8 {
+        } else if position.1 > (CHUNK_SIZE.y - 1) as i8 {
             directions.push(world::Direction::Up);
         }
 
         if position.2 < 0 {
             directions.push(world::Direction::North);
-        }
-
-        else if position.2 > (CHUNK_SIZE.2 - 1) as i8 {
+        } else if position.2 > (CHUNK_SIZE.z - 1) as i8 {
             directions.push(world::Direction::South);
         }
 
-        return Some(directions);
+        Some(directions)
     }
 
     // Is a position outside of a chunk?
     pub fn position_overflow(position: (i8, i8, i8)) -> bool {
-        let xyz_array = [position.0, position.1, position.2];
-        let chunk_size_array = [CHUNK_SIZE.0 as i8, CHUNK_SIZE.1 as i8, CHUNK_SIZE.2 as i8];
-
-        for i in 0..3 {
-            if xyz_array[i] < 0 || xyz_array[i] > chunk_size_array[i] - 1 {
-                return true;
-            }
-        }
-
-        return false;
+        (position.0 < 0 || position.0 >= CHUNK_SIZE.x as i8)
+        || (position.1 < 0 || position.1 >= CHUNK_SIZE.y as i8)
+        || (position.2 < 0 || position.2 >= CHUNK_SIZE.z as i8)
     }
 
-    pub fn pos_local_to_global(&self, x: u8, y: u8, z: u8) -> (isize, isize, isize) {
-        let global_pos: (isize, isize, isize) = (
-            self.pos_local_to_global_single(x, world::Axis::X),
-            self.pos_local_to_global_single(y, world::Axis::Y),
-            self.pos_local_to_global_single(z, world::Axis::Z)
-        );
-
-        return global_pos;
+    pub fn pos_local_to_global(&self, block_pos: BlockPos) -> (isize, isize, isize) {
+        (
+            self.pos_local_to_global_single(block_pos.x, world::Axis::X),
+            self.pos_local_to_global_single(block_pos.y, world::Axis::Y),
+            self.pos_local_to_global_single(block_pos.z, world::Axis::Z),
+        )
     }
 
     pub fn pos_local_to_global_single(&self, s: u8, coord_type: world::Axis) -> isize {
         let csize = match coord_type {
-            world::Axis::X => CHUNK_SIZE.0,
-            world::Axis::Y => CHUNK_SIZE.1,
-            world::Axis::Z => CHUNK_SIZE.2,
+            world::Axis::X => CHUNK_SIZE.x,
+            world::Axis::Y => CHUNK_SIZE.y,
+            world::Axis::Z => CHUNK_SIZE.z,
         };
 
         let cpos = match coord_type {
-            world::Axis::X => self.cpos.0,
-            world::Axis::Y => self.cpos.1,
-            world::Axis::Z => self.cpos.2,
+            world::Axis::X => self.pos.x,
+            world::Axis::Y => self.pos.y,
+            world::Axis::Z => self.pos.z,
         };
 
         let global_s: isize = (cpos * csize as isize) + s as isize;
 
-        return global_s;
+        global_s
+    }
+}
+
+#[derive(Resource)]
+struct ChunkManager {
+    chunks: HashMap<ChunkPos, Chunk>,
+}
+
+impl ChunkManager {
+    fn new() -> Self {
+        Self {
+            chunks: HashMap::new(),
+        }
+    }
+
+    pub fn get_block(&self, chunk: &Chunk, block_pos: BlockPos) -> BlockType {
+        chunk.get_block(block_pos)
+    }
+}
+
+fn test_chunks(
+    mut cmds: Commands,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut chunk_manager: ResMut<ChunkManager>,
+    asset_server: ResMut<AssetServer>,
+) {
+    let xyz_ranges: Rc<(Range<isize>, Range<isize>, Range<isize>)> = Rc::new((-1..2, -1..2, -1..2));
+
+    for cx in xyz_ranges.0.clone() {
+        for cy in xyz_ranges.1.clone() {
+            for cz in xyz_ranges.2.clone() {
+                let chunk_pos = ChunkPos::new(cx, cy, cz);
+                let mut chunk = Chunk::new(chunk_pos);
+
+                world_generation::regular(&mut chunk);
+
+                chunk_manager.chunks.insert(chunk_pos, chunk);
+            }
+        }
+    }
+
+    for cx in xyz_ranges.0.clone() {
+        for cy in xyz_ranges.1.clone() {
+            for cz in xyz_ranges.2.clone() {
+                let chunk_pos = ChunkPos::new(cx, cy, cz);
+                let chunk = chunk_manager.chunks.get(&chunk_pos).unwrap();
+
+                cmds.spawn((
+                    PbrBundle {
+                        mesh: meshes.add(chunk.mesh()),
+                        transform: Transform::from_xyz(
+                            (cx * CHUNK_SIZE.x as isize) as f32,
+                            (cy * CHUNK_SIZE.y as isize) as f32,
+                            (cz * CHUNK_SIZE.z as isize) as f32,
+                        ),
+                        material: materials.add(StandardMaterial {
+                            // base_color: Color::rgb(0.05, 0.5, 0.35), // The only reason this is still here, is because I think it is a cool color, and it is a secret comment!
+                            base_color_texture: Some(asset_server.load(format!(
+                                "{}/block_atlas.png",
+                                places::custom_built_assets().to_string()
+                            ))),
+                            // double_sided: true, // debug
+                            // cull_mode: None, // debug
+                            reflectance: 0.15,
+                            perceptual_roughness: 0.6,
+                            ..default()
+                        }),
+                        ..default()
+                    },
+                    Name::new(format!("Chunk ({}, {}, {})", cx, cy, cz)),
+                ));
+            }
+        }
     }
 }

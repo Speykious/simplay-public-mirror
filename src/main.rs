@@ -1,4 +1,3 @@
-mod chunk;
 mod block;
 mod voxel;
 mod world;
@@ -15,7 +14,7 @@ mod hash;
 mod hash_boilerplate;
 mod editor_mode;
 mod world_generation;
-mod chunk_manager;
+mod chunk;
 
 use std::env;
 use bevy::prelude::*;
@@ -25,9 +24,8 @@ use bevy::render::RenderPlugin;
 use bevy::log::LogPlugin;
 use clap::Parser;
 
-use chunk::CHUNK_SIZE;
 use editor_mode::EditorModePlugin;
-use chunk_manager::ChunkManagerPlugin;
+use chunk::{ChunkManagerPlugin, CHUNK_SIZE};
 
 macro_rules! run_exit_code_function {
     (
@@ -143,7 +141,7 @@ fn spawn_random_shit(
     cmds.spawn(
         PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            transform: Transform::from_xyz(CHUNK_SIZE.0 as f32, CHUNK_SIZE.1 as f32, CHUNK_SIZE.2 as f32),
+            transform: Transform::from_xyz(CHUNK_SIZE.x as f32, CHUNK_SIZE.y as f32, CHUNK_SIZE.z as f32),
             material: materials.add(StandardMaterial {
                 // base_color: Color::rgb(0.05, 0.5, 0.35),
                 base_color_texture: Some(asset_server.load("textures/block/oak_log_end.png")),
